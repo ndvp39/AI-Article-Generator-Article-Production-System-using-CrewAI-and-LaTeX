@@ -82,9 +82,9 @@
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
 | T-025 | Implement `shared/config.py` — `ConfigManager` | `HIGH` | `[x]` | Developer | Loads `setup.json`, `rate_limits.json`, `model_pricing.json`; validates version compatibility; raises on missing keys |
-| T-026 | Implement `shared/gatekeeper.py` — `ApiGatekeeper` | `HIGH` | `[ ]` | Developer | Rate limiting enforced; FIFO queue on overflow; retry on transient failures; every call logged as `CallRecord` with tokens + timestamp; `get_call_records()` and `get_token_stats()` functional |
-| T-027 | Write unit tests for `ConfigManager` (`tests/unit/test_shared/test_config.py`) | `HIGH` | `[ ]` | Developer | Tests: valid config loads, version mismatch raises, missing key raises, defaults applied |
-| T-028 | Write unit tests for `ApiGatekeeper` (`tests/unit/test_shared/test_gatekeeper.py`) | `HIGH` | `[ ]` | Developer | Tests: rate limit respected, queue used on overflow, retry on 429, CallRecord logged, token stats accurate; all external calls mocked |
+| T-026 | Implement `shared/gatekeeper.py` — `ApiGatekeeper` | `HIGH` | `[x]` | Developer | Rate limiting enforced; FIFO queue on overflow; retry on transient failures; every call logged as `CallRecord` with tokens + timestamp; `get_call_records()` and `get_token_stats()` functional |
+| T-027 | Write unit tests for `ConfigManager` (`tests/unit/test_shared/test_config.py`) | `HIGH` | `[x]` | Developer | Tests: valid config loads, version mismatch raises, missing key raises, defaults applied |
+| T-028 | Write unit tests for `ApiGatekeeper` (`tests/unit/test_shared/test_gatekeeper.py`) | `HIGH` | `[x]` | Developer | Tests: rate limit respected, queue used on overflow, retry on 429, CallRecord logged, token stats accurate; all external calls mocked |
 
 ### 3B — Agent Tools
 
@@ -223,14 +223,14 @@
 |-------|-----------|-------|------|-------------|-------------|
 | 1 | M1 — Documentation | T-001 to T-013 + T-011b + T-011c | 15 | 0 | 0 |
 | 2 | M2 — Project Skeleton | T-014 to T-024 | 11 | 0 | 0 |
-| 3 | M3 — Core Agents | T-025 to T-040 | 0 | 0 | 16 |
+| 3 | M3 — Core Agents | T-025 to T-040 | 4 | 0 | 12 |
 | 4 | M4 — Content Pipeline | T-041 to T-047 | 0 | 0 | 7 |
 | 5 | M5 — Visual Elements | T-048 to T-053 | 0 | 0 | 6 |
 | 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 0 | 0 | 8 |
 | 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 0 | 0 | 6 |
 | 8 | M8 pre — Cost Tracking | T-068 to T-073 | 0 | 0 | 6 |
 | 9 | M8 — Integration & QA | T-074 to T-087 | 0 | 0 | 14 |
-| **Total** | | **89 tasks** | **26** | **0** | **63** |
+| **Total** | | **89 tasks** | **30** | **0** | **59** |
 
 ---
 
