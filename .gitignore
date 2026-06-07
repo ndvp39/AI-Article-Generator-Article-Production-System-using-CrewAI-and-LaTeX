@@ -1,0 +1,51 @@
+# Secrets
+.env
+*.pem
+*.key
+credentials.json
+
+# Claude Code internal session data
+.claude/
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+.ruff_cache/
+.mypy_cache/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+htmlcov/
+
+# uv
+uv.lock
+
+# Generated output
+results/
+assets/
+
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.vscode/
+.idea/
+*.swp
