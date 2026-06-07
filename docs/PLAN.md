@@ -115,9 +115,9 @@ C4Component
         Component(researcher, "ResearcherAgent", "crewai.Agent + SerperDevTool", "MANDATORY: uses SerperDevTool to perform live Google searches; gathers facts and key data; produces structured research outline")
         Component(writer, "WriterAgent", "crewai.Agent", "Receives Researcher context; writes full Markdown content; has NO internet search tool assigned")
         Component(editor, "EditorAgent", "crewai.Agent", "Reviewer/QC: checks factual accuracy and improves clarity without changing original meaning")
-        Component(graph_agent, "GraphGeneratorAgent", "crewai.Agent", "Produces executable Python code for the data figure")
-        Component(latex_agent, "LaTeXFormatterAgent", "crewai.Agent", "Converts validated Markdown to full .tex with preamble")
-        Component(bidi_agent, "BiDiSpecialistAgent", "crewai.Agent", "Validates Hebrew-English direction; fixes plain-text formulas")
+        Component(graph_agent, "GraphGeneratorAgent", "crewai.Agent + CodeInterpreterTool", "Produces and self-verifies Python matplotlib code via CodeInterpreterTool; iterates until graph file is successfully produced")
+        Component(latex_agent, "LaTeXFormatterAgent", "crewai.Agent + FileWriterTool", "Converts validated Markdown to full .tex; writes results/article.tex directly via FileWriterTool")
+        Component(bidi_agent, "BiDiSpecialistAgent", "crewai.Agent + FileReadTool + FileWriterTool", "Reads .tex via FileReadTool; validates BiDi; writes corrected .tex via FileWriterTool")
         Component(task_defs, "TaskDefinitions", "Python", "Defines all Task objects with expected_output and agent assignment")
     }
 
@@ -291,6 +291,19 @@ project-root/
 │   │   ├── test_pipeline.py
 │   │   └── test_latex_compilation.py
 │   └── conftest.py                        # Shared fixtures
+├── skills/                                # Active CrewAI skill folders (injected via skills= param)
+│   ├── researcher/
+│   │   └── SKILL.md                       # ResearcherAgent behavioral guidelines
+│   ├── writer/
+│   │   └── SKILL.md                       # WriterAgent behavioral guidelines
+│   ├── editor/
+│   │   └── SKILL.md                       # EditorAgent behavioral guidelines
+│   ├── graph_generator/
+│   │   └── SKILL.md                       # GraphGeneratorAgent behavioral guidelines
+│   ├── latex_formatter/
+│   │   └── SKILL.md                       # LaTeXFormatterAgent behavioral guidelines
+│   └── bidi_specialist/
+│       └── SKILL.md                       # BiDiSpecialistAgent behavioral guidelines
 ├── docs/
 │   ├── PRD.md
 │   ├── PLAN.md
@@ -302,7 +315,8 @@ project-root/
 │   ├── PRD_bidi.md
 │   ├── PRD_graph_generation.md
 │   ├── PRD_cost_tracker.md
-│   └── PRD_research_tools.md
+│   ├── PRD_research_tools.md
+│   └── PRD_skills.md
 ├── config/
 │   ├── setup.json                         # Main app config (versioned)
 │   ├── rate_limits.json                   # API rate limits (versioned)
@@ -499,12 +513,16 @@ classDiagram
         +build() Agent
     }
     class GraphGeneratorAgent {
+        +code_interpreter: CodeInterpreterTool
         +build() Agent
     }
     class LaTeXFormatterAgent {
+        +file_writer: FileWriterTool
         +build() Agent
     }
     class BiDiSpecialistAgent {
+        +file_reader: FileReadTool
+        +file_writer: FileWriterTool
         +build() Agent
     }
 
@@ -634,7 +652,7 @@ graph TD
 | **Rationale** | `SerperDevTool` is the canonical CrewAI-native Google Search integration, requiring only a `SERPER_API_KEY`. It integrates directly as a CrewAI `BaseTool`, requiring no custom wrapper code. It is the example tool named explicitly in the assignment |
 | **Alternatives considered** | `DuckDuckGoSearchTool` (no API key required but lower quality results), custom `requests` + Google API (requires more code and maintenance), `BrowserbaseLoadTool` (heavier, full browser automation; overkill for text research) |
 | **Trade-offs** | Requires a paid/free-tier Serper API account; search results quality depends on query construction by the LLM |
-| **Tool isolation rule** | Only the Researcher agent receives `SerperDevTool`. The Writer and all other agents MUST NOT have this tool — per Project.md §2: *"Do not connect this agent directly to an internet search tool"* |
+| **Tool isolation rule** | Only the Researcher agent receives `SerperDevTool`. All other agents MUST NOT have any internet search tool. Non-search tools (`FileReadTool`, `FileWriterTool`, `CodeInterpreterTool`) are permitted on agents that need them — per Project.md §2: *"Do not connect this agent directly to an internet search tool"* |
 
 ---
 

@@ -150,6 +150,8 @@ All graph files MUST be saved to `results/figures/`. The directory MUST be creat
 ### 3.1 Agent Configuration
 
 ```python
+from crewai_tools import CodeInterpreterTool
+
 GraphGeneratorAgent(
     role="Python Data Visualization Specialist",
     goal=(
@@ -159,9 +161,11 @@ GraphGeneratorAgent(
     backstory=(
         "You are an expert in scientific data visualization. "
         "You write clean, self-contained Python scripts that produce "
-        "high-quality graphs saved to disk. You never use plt.show()."
+        "high-quality graphs saved to disk. You use your code interpreter "
+        "to execute and verify your code before delivering it. "
+        "You never use plt.show()."
     ),
-    tools=[],   # No external tools — pure code generation
+    tools=[CodeInterpreterTool()],   # Executes and iterates on graph code
     llm=...,
 )
 ```
@@ -180,9 +184,10 @@ GraphGenerationTask(
         "4. Include a legend if multiple series\n"
         "5. Save as PDF to 'figures/graph.pdf'\n"
         "6. Do NOT call plt.show()\n"
-        "Output ONLY the Python code, no explanation."
+        "Use your CodeInterpreterTool to execute the script and verify the "
+        "graph file is created. Iterate until execution succeeds."
     ),
-    expected_output="A complete, executable Python script as a string.",
+    expected_output="A complete, verified Python script that successfully generates figures/graph.pdf.",
     agent=graph_generator_agent,
     context=[writer_task],   # Receives article content as context
 )

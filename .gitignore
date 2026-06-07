@@ -20,8 +20,8 @@ dist/
 build/
 htmlcov/
 
-# uv
-uv.lock
+# uv — lock file IS committed for reproducibility
+# uv.lock
 
 # Generated output
 results/

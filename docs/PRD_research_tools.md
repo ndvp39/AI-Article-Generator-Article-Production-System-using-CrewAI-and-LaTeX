@@ -90,15 +90,15 @@ A minimum of **3 distinct searches** is required per article to ensure adequate 
 **REQ-SRCH-01: Mandatory SerperDevTool for ResearcherAgent**
 The `ResearcherAgent` MUST be configured with `SerperDevTool` as its only tool. The agent's `tools` list MUST contain exactly one `SerperDevTool` instance. Configuring the Researcher without this tool is a pipeline failure.
 
-**REQ-SRCH-02: Tool Isolation — No Other Agent Has Search**
-All agents other than `ResearcherAgent` MUST have `tools=[]`. Specifically:
-- `WriterAgent.tools == []`
-- `EditorAgent.tools == []`
-- `GraphGeneratorAgent.tools == []`
-- `LaTeXFormatterAgent.tools == []`
-- `BiDiSpecialistAgent.tools == []`
+**REQ-SRCH-02: Search Tool Isolation — No Other Agent Has Internet Search**
+`SerperDevTool` and any internet search tool MUST be assigned ONLY to `ResearcherAgent`. All other agents MUST NOT have any internet search capability. Non-search tools (file I/O, code execution) are permitted on other agents where needed:
+- `WriterAgent` — no internet search tool
+- `EditorAgent` — no internet search tool
+- `GraphGeneratorAgent` — no internet search tool (`CodeInterpreterTool` is permitted)
+- `LaTeXFormatterAgent` — no internet search tool (`FileWriterTool` is permitted)
+- `BiDiSpecialistAgent` — no internet search tool (`FileReadTool` + `FileWriterTool` permitted)
 
-Verified by unit tests and code review.
+Verified by unit tests and `validate_tool_isolation()` at crew startup.
 
 **REQ-SRCH-03: Minimum 3 Searches Per Run**
 The `ResearcherAgent` MUST perform at least 3 distinct search queries per article generation run. A single broad search is insufficient for academic-quality research.
@@ -212,18 +212,23 @@ def build_search_tool() -> SerperDevTool:
 ### 4.3 `validate_tool_isolation(agents: list[BaseAgent]) → None`
 
 ```python
+# Search tools that are forbidden on non-Researcher agents
+SEARCH_TOOLS = {"SerperDevTool", "WebsiteSearchTool", "DuckDuckGoSearchTool"}
+
 def validate_tool_isolation(agents: list[BaseAgent]) -> None:
     for agent in agents:
         if agent.role != "Senior Research Specialist":
-            tool_names = [type(t).__name__ for t in agent.tools]
-            if "SerperDevTool" in tool_names:
+            tool_names = {type(t).__name__ for t in agent.tools}
+            violations = tool_names & SEARCH_TOOLS
+            if violations:
                 raise ToolIsolationError(
-                    f"Agent '{agent.role}' has SerperDevTool — only "
-                    f"ResearcherAgent may have search tools."
+                    f"Agent '{agent.role}' has internet search tool(s) "
+                    f"{violations} — only ResearcherAgent may have search tools."
                 )
 ```
 
 Called during `CrewService` initialization to enforce isolation at startup.
+Non-search tools (`FileReadTool`, `FileWriterTool`, `CodeInterpreterTool`) do NOT trigger this check.
 
 ---
 
@@ -311,7 +316,7 @@ No sanitization of the topic string is required for the Serper API call (it is a
 
 ## 8. Constraints
 
-1. **ResearcherAgent only:** `SerperDevTool` MUST appear in exactly one agent's `tools` list — `ResearcherAgent`. Verified by `validate_tool_isolation()` at crew startup.
+1. **Search isolation:** `SerperDevTool` (and any internet search tool) MUST appear in exactly one agent's `tools` list — `ResearcherAgent`. Non-search tools (`FileReadTool`, `FileWriterTool`, `CodeInterpreterTool`) are permitted on other agents. Verified by `validate_tool_isolation()` at crew startup.
 2. **Environment variable only:** `SERPER_API_KEY` sourced exclusively from environment. Zero exceptions.
 3. **Minimum 3 searches:** The task description MUST instruct the agent to perform ≥ 3 searches. The pipeline MUST verify `len(ResearchSummary.queries_run) >= 3` and raise `InsufficientResearchError` if not.
 4. **Minimum 5 references:** Pipeline MUST verify `len(ResearchSummary.references) >= 5` before passing context to WriterAgent.
@@ -368,15 +373,15 @@ The research tools system is considered successful when all of the following are
 **Action:** Inspect `agent.tools`  
 **Expected:** `len(agent.tools) == 1`; `type(agent.tools[0]).__name__ == "SerperDevTool"`
 
-### Scenario T-004: WriterAgent has no tools
+### Scenario T-004: WriterAgent has no search tools
 **Setup:** Build `WriterAgent` via `writer.py`  
 **Action:** Inspect `agent.tools`  
-**Expected:** `agent.tools == []`
+**Expected:** No tool in `agent.tools` is of type `SerperDevTool` or any other search tool; `agent.tools == []` (Writer has no tools at all)
 
-### Scenario T-005: Tool isolation validation catches violation
+### Scenario T-005: Tool isolation validation catches search tool violation
 **Setup:** Manually assign `SerperDevTool` to `WriterAgent.tools`  
 **Action:** `validate_tool_isolation([researcher, writer, editor, ...])`  
-**Expected:** `ToolIsolationError` raised naming "WriterAgent" as the violating agent
+**Expected:** `ToolIsolationError` raised naming "WriterAgent" as the violating agent; `FileWriterTool` on `LaTeXFormatterAgent` does NOT trigger the error
 
 ### Scenario T-006: Insufficient research raises error
 **Setup:** Mock `ResearcherAgent` to return only 2 search queries and 3 references  

@@ -164,8 +164,11 @@ This one-directional flow ensures each downstream agent builds on validated upst
 | **Mandatory** | YES — per Project.md §2 |
 | **Role** | LaTeX Typesetting Specialist |
 | **Goal** | Convert the approved Markdown article into complete, compilable LaTeX code ready for LuaLaTeX compilation |
-| **Tools** | NONE |
+| **Tools** | `FileWriterTool` — writes the final `.tex` file directly to `results/article.tex` |
 | **LLM access** | YES |
+
+**Skills:**
+- `FileWriterTool` — allows the agent to **persist the `.tex` output to disk** itself, rather than returning it as a string for an external service to save. Ensures the file is written with correct UTF-8 encoding and the exact path expected by `LaTeXCompiler`.
 
 **Backstory:** You are a LaTeX expert who specializes in academic typesetting, Hebrew–English bidirectional documents, and complex mathematical notation. You produce `.tex` files that compile on the first attempt.
 
@@ -203,19 +206,23 @@ This one-directional flow ensures each downstream agent builds on validated upst
 | **Mandatory** | NO — enhances output quality |
 | **Role** | Data Visualization Specialist |
 | **Goal** | Produce clean, executable Python code that generates a meaningful data visualization relevant to the article topic |
-| **Tools** | NONE |
+| **Tools** | `CodeInterpreterTool` — executes Python code to test and iterate on graph generation |
 | **LLM access** | YES |
+
+**Skills:**
+- `CodeInterpreterTool` — allows the agent to **run its own matplotlib code** and see the result. The agent iterates: write code → execute → observe output/error → fix → re-execute until the graph file is successfully produced. This eliminates blind code generation.
 
 **Input (context):** Reviewer agent's Markdown (to understand the article topic and data).
 
 **Output:** Executable Python code block (matplotlib/seaborn) that:
 - Creates a figure relevant to the article content
-- Saves it to `assets/article_graph.png` (or `.pdf`)
+- Saves it to `figures/graph.pdf` (or `.png`)
 - Uses `plt.savefig()`, not `plt.show()`
 - Is self-contained (all imports included)
+- Has been verified to execute successfully via `CodeInterpreterTool`
 
 **Performance metrics:**
-- Code executes without errors in `GraphRunner`
+- Code executes without errors (verified by the agent itself via `CodeInterpreterTool`)
 - Output file exists at the declared path
 - Figure is embedded in the final LaTeX document
 
@@ -230,8 +237,12 @@ This one-directional flow ensures each downstream agent builds on validated upst
 | **Mandatory** | NO — ensures BiDi correctness |
 | **Role** | Hebrew–English Bidirectional Text Specialist |
 | **Goal** | Validate and correct all Hebrew–English direction switching in the `.tex` file; fix any formulas degraded to plain text due to BiDi confusion |
-| **Tools** | NONE |
+| **Tools** | `FileReadTool` — reads the `.tex` file; `FileWriterTool` — writes the corrected `.tex` file |
 | **LLM access** | YES |
+
+**Skills:**
+- `FileReadTool` — reads `results/article.tex` directly from disk for validation, rather than relying on in-memory context (which may be truncated for large documents).
+- `FileWriterTool` — writes the BiDi-corrected `.tex` back to `results/article.tex`, overwriting the previous version with the validated content.
 
 **Input (context):** LaTeX Formatter agent's `.tex` file.
 
@@ -244,6 +255,26 @@ This one-directional flow ensures each downstream agent builds on validated upst
 - No "formula as plain text" issues in final PDF
 - Hebrew text renders RTL; English text renders LTR within the same document
 - No garbled characters in compiled PDF
+
+---
+
+## 2.3 Agent Skills + Tools Summary
+
+Each agent has two distinct components:
+- **Skill** — a `SKILL.md` folder injected via `skills=["./skills/<name>"]`, providing behavioral guidelines
+- **Tools** — Python `crewai_tools` instances assigned via `tools=[...]`
+
+| Agent | Skill folder | Tools (`crewai_tools`) |
+|-------|-------------|------------------------|
+| `ResearcherAgent` | `skills/researcher/` | `SerperDevTool` |
+| `WriterAgent` | `skills/writer/` | — |
+| `EditorAgent` | `skills/editor/` | — |
+| `GraphGeneratorAgent` | `skills/graph_generator/` | `CodeInterpreterTool` |
+| `LaTeXFormatterAgent` | `skills/latex_formatter/` | `FileWriterTool` |
+| `BiDiSpecialistAgent` | `skills/bidi_specialist/` | `FileReadTool`, `FileWriterTool` |
+
+> **Search isolation rule:** Only `ResearcherAgent` has `SerperDevTool`. All other agents are forbidden from having any internet search tool.  
+> **Non-search tools** (`FileReadTool`, `FileWriterTool`, `CodeInterpreterTool`) are assigned where the agent's task requires direct file access or code execution.
 
 ---
 
@@ -343,7 +374,7 @@ crew = Crew(
 
 ## 7. Constraints
 
-1. **Tool isolation:** `SerperDevTool` MUST be assigned ONLY to `ResearcherAgent`. All other agents MUST have `tools=[]`.
+1. **Search tool isolation:** `SerperDevTool` (and any internet search tool) MUST be assigned ONLY to `ResearcherAgent`. No other agent MAY have an internet search tool. Non-search tools (`FileReadTool`, `FileWriterTool`, `CodeInterpreterTool`) are permitted on appropriate agents.
 2. **Context chaining:** Every task (except Task 1) MUST declare `context` from at least one prior task. Agents MUST NOT ignore context.
 3. **Process type:** Crew MUST use `Process.sequential` or `Process.hierarchical`. No other process type is permitted.
 4. **No business logic in Crew layer:** `CrewService` delegates to `ArticleGeneratorSDK`; agent definitions contain only CrewAI configuration — no file I/O, no LaTeX compilation.

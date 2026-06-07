@@ -1,0 +1,35 @@
+{
+  "setup": {
+    "version": "1.00",
+    "article": {
+      "target_pages": 15,
+      "language": "english",
+      "bidi_language": "hebrew",
+      "citation_style": "numeric",
+      "min_chapters": 4,
+      "min_references": 5,
+      "min_searches": 3
+    },
+    "agents": {
+      "model": "claude-sonnet-4-5",
+      "temperature": 0.7,
+      "max_tokens": 8192,
+      "max_iter": 10
+    },
+    "latex": {
+      "engine": "lualatex",
+      "passes": 4,
+      "output_dir": "results",
+      "figures_dir": "figures",
+      "timeout_seconds": 120
+    },
+    "cost": {
+      "budget_alert_usd": 1.00,
+      "pricing_config": "model_pricing.json"
+    },
+    "logging": {
+      "level": "INFO",
+      "format": "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+    }
+  }
+}

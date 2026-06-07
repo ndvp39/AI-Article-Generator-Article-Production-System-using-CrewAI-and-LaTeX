@@ -1,0 +1,39 @@
+{
+  "model_pricing": {
+    "version": "1.00",
+    "currency": "USD",
+    "unit": "per_million_tokens",
+    "models": {
+      "claude-haiku-4-5": {
+        "display_name": "Claude Haiku 4.5",
+        "provider": "Anthropic",
+        "input_price_per_mtok": 0.80,
+        "output_price_per_mtok": 4.00
+      },
+      "claude-sonnet-4-5": {
+        "display_name": "Claude Sonnet 4.5",
+        "provider": "Anthropic",
+        "input_price_per_mtok": 3.00,
+        "output_price_per_mtok": 15.00
+      },
+      "claude-opus-4-5": {
+        "display_name": "Claude Opus 4.5",
+        "provider": "Anthropic",
+        "input_price_per_mtok": 15.00,
+        "output_price_per_mtok": 75.00
+      },
+      "gpt-4o-mini": {
+        "display_name": "GPT-4o mini",
+        "provider": "OpenAI",
+        "input_price_per_mtok": 0.15,
+        "output_price_per_mtok": 0.60
+      },
+      "gpt-4o": {
+        "display_name": "GPT-4o",
+        "provider": "OpenAI",
+        "input_price_per_mtok": 2.50,
+        "output_price_per_mtok": 10.00
+      }
+    }
+  }
+}

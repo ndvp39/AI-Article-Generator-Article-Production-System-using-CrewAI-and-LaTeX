@@ -44,6 +44,8 @@
 | T-009 | Create `docs/PRD_graph_generation.md` — dedicated PRD for Python graph generation | `MED` | `[x]` | Developer | matplotlib spec, programmatic execution, output path, LaTeX embedding |
 | T-010 | Create `docs/PRD_cost_tracker.md` — dedicated PRD for token tracking & cost analysis | `MED` | `[x]` | Developer | CallRecord schema, per-agent breakdown, cross-model comparison, budget alert, report format |
 | T-011 | Create `docs/PRD_research_tools.md` — dedicated PRD for SerperDevTool internet search | `HIGH` | `[x]` | Developer | SerperDevTool integration, SERPER_API_KEY management, tool isolation rule, test scenarios |
+| T-011b | Create `docs/PRD_skills.md` — dedicated PRD for all agent skills/tools (custom skills + generic tools per agent) | `HIGH` | `[x]` | Developer |
+| T-011c | Create `skills/` at project root — one `SKILL.md` per agent (YAML frontmatter + Markdown guidelines, injected via `skills=` param) | `HIGH` | `[x]` | Developer | 6 folders: researcher, writer, editor, graph_generator, latex_formatter, bidi_specialist — each with SKILL.md containing name/description/author/version + Workflow + Constraints |
 | T-012 | Create `README.md` — full user manual at project root | `HIGH` | `[x]` | Developer | Installation, usage, examples, config guide, contribution guidelines, license |
 | T-013 | Create `docs/prompts_book.md` — Prompt Engineering Log | `MED` | `[x]` | Developer | Every significant prompt used logged with context, goal, received output, refinements |
 
@@ -56,17 +58,17 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-014 | Initialize `pyproject.toml` with `uv` — name, version, dependencies, ruff/pytest/coverage config | `HIGH` | `[ ]` | Developer | `uv sync` succeeds; `[tool.ruff]`, `[tool.coverage]` sections present; no `requirements.txt` |
-| T-015 | Create full directory structure per PLAN.md §3 | `HIGH` | `[ ]` | Developer | All directories exist: `src/`, `tests/`, `docs/`, `config/`, `data/`, `results/`, `assets/`, `notebooks/` |
-| T-016 | Create `__init__.py` files for all packages and sub-packages | `HIGH` | `[ ]` | Developer | Every directory under `src/` and `tests/` has `__init__.py`; `__version__` defined in main `__init__.py` |
-| T-017 | Create `src/article_generator/shared/version.py` — version tracking | `MED` | `[ ]` | Developer | `VERSION = "1.00"` defined; imported by `__init__.py` |
-| T-018 | Create `src/article_generator/constants.py` — immutable project constants | `MED` | `[ ]` | Developer | All non-configurable constants defined; no configurable values present |
-| T-019 | Create `config/setup.json` — main application config (versioned) | `HIGH` | `[ ]` | Developer | Matches schema in PLAN.md §7.1; `"version": "1.00"`; all required keys present |
-| T-020 | Create `config/rate_limits.json` — API rate limit config (versioned) | `HIGH` | `[ ]` | Developer | Matches schema in PLAN.md §7.2; `"version": "1.00"` |
-| T-021 | Create `config/model_pricing.json` — LLM token pricing (versioned) | `HIGH` | `[ ]` | Developer | Matches schema in PLAN.md §7.13; ≥ 5 models with input/output cost per million; budget thresholds set |
-| T-022 | Create `.env-example` — placeholder secrets | `HIGH` | `[ ]` | Developer | Contains `LLM_API_KEY=your_key_here` and `SERPER_API_KEY=your_key_here`; no real keys present |
-| T-023 | Create `.gitignore` | `HIGH` | `[ ]` | Developer | Includes: `.env`, `*.pem`, `*.key`, `credentials.json`, `results/`, `__pycache__/`, `.ruff_cache/`, `uv.lock` (if desired) |
-| T-024 | Run `uv lock` to generate `uv.lock` | `HIGH` | `[ ]` | Developer | `uv.lock` committed; `uv sync` installs all deps cleanly on clean machine |
+| T-014 | Initialize `pyproject.toml` with `uv` — name, version, dependencies, ruff/pytest/coverage config | `HIGH` | `[x]` | Developer | `uv sync` succeeds; `[tool.ruff]`, `[tool.coverage]` sections present; no `requirements.txt` |
+| T-015 | Create full directory structure per PLAN.md §3 | `HIGH` | `[x]` | Developer | All directories exist: `src/`, `tests/`, `docs/`, `config/`, `data/`, `results/`, `assets/`, `notebooks/` |
+| T-016 | Create `__init__.py` files for all packages and sub-packages | `HIGH` | `[x]` | Developer | Every directory under `src/` and `tests/` has `__init__.py`; `__version__` defined in main `__init__.py` |
+| T-017 | Create `src/article_generator/shared/version.py` — version tracking | `MED` | `[x]` | Developer | `VERSION = "1.00"` defined; imported by `__init__.py` |
+| T-018 | Create `src/article_generator/constants.py` — immutable project constants | `MED` | `[x]` | Developer | All non-configurable constants defined; no configurable values present |
+| T-019 | Create `config/setup.json` — main application config (versioned) | `HIGH` | `[x]` | Developer | Matches schema in PLAN.md §7.1; `"version": "1.00"`; all required keys present |
+| T-020 | Create `config/rate_limits.json` — API rate limit config (versioned) | `HIGH` | `[x]` | Developer | Matches schema in PLAN.md §7.2; `"version": "1.00"` |
+| T-021 | Create `config/model_pricing.json` — LLM token pricing (versioned) | `HIGH` | `[x]` | Developer | Matches schema in PLAN.md §7.13; ≥ 5 models with input/output cost per million; budget thresholds set |
+| T-022 | Create `.env-example` — placeholder secrets | `HIGH` | `[x]` | Developer | Contains `LLM_API_KEY=your_key_here` and `SERPER_API_KEY=your_key_here`; no real keys present |
+| T-023 | Create `.gitignore` | `HIGH` | `[x]` | Developer | Includes: `.env`, `*.pem`, `*.key`, `credentials.json`, `results/`, `__pycache__/`, `.ruff_cache/`, `uv.lock` (if desired) |
+| T-024 | Run `uv lock` to generate `uv.lock` | `HIGH` | `[x]` | Developer | `uv.lock` committed; `uv sync` installs all deps cleanly on clean machine |
 
 ---
 
@@ -79,7 +81,7 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-025 | Implement `shared/config.py` — `ConfigManager` | `HIGH` | `[ ]` | Developer | Loads `setup.json`, `rate_limits.json`, `model_pricing.json`; validates version compatibility; raises on missing keys |
+| T-025 | Implement `shared/config.py` — `ConfigManager` | `HIGH` | `[x]` | Developer | Loads `setup.json`, `rate_limits.json`, `model_pricing.json`; validates version compatibility; raises on missing keys |
 | T-026 | Implement `shared/gatekeeper.py` — `ApiGatekeeper` | `HIGH` | `[ ]` | Developer | Rate limiting enforced; FIFO queue on overflow; retry on transient failures; every call logged as `CallRecord` with tokens + timestamp; `get_call_records()` and `get_token_stats()` functional |
 | T-027 | Write unit tests for `ConfigManager` (`tests/unit/test_shared/test_config.py`) | `HIGH` | `[ ]` | Developer | Tests: valid config loads, version mismatch raises, missing key raises, defaults applied |
 | T-028 | Write unit tests for `ApiGatekeeper` (`tests/unit/test_shared/test_gatekeeper.py`) | `HIGH` | `[ ]` | Developer | Tests: rate limit respected, queue used on overflow, retry on 429, CallRecord logged, token stats accurate; all external calls mocked |
@@ -95,15 +97,15 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-031 | Implement `services/agents/researcher.py` — `ResearcherAgent` | `HIGH` | `[ ]` | Developer | Agent has `role`, `goal`, `backstory`; `SerperDevTool` assigned; `build()` returns valid `crewai.Agent` |
-| T-032 | Implement `services/agents/writer.py` — `WriterAgent` | `HIGH` | `[ ]` | Developer | Agent has `role`, `goal`, `backstory`; NO internet search tool; `build()` returns valid `crewai.Agent` |
-| T-033 | Implement `services/agents/editor.py` — `EditorAgent` (Reviewer/QC) | `HIGH` | `[ ]` | Developer | Agent checks factual accuracy and improves clarity; `build()` returns valid `crewai.Agent` |
-| T-034 | Implement `services/agents/graph_generator.py` — `GraphGeneratorAgent` | `MED` | `[ ]` | Developer | Agent produces executable Python matplotlib code; `build()` returns valid `crewai.Agent` |
-| T-035 | Implement `services/agents/latex_formatter.py` — `LaTeXFormatterAgent` | `HIGH` | `[ ]` | Developer | Agent converts Markdown to `.tex` with full preamble; `build()` returns valid `crewai.Agent` |
-| T-036 | Implement `services/agents/bidi_specialist.py` — `BiDiSpecialistAgent` | `HIGH` | `[ ]` | Developer | Agent validates Hebrew–English BiDi and fixes plain-text formula degradation; `build()` returns valid `crewai.Agent` |
+| T-031 | Implement `services/agents/researcher.py` — `ResearcherAgent` | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[SerperDevTool()]`, `skills=["./skills/researcher"]`; role/goal/backstory set |
+| T-032 | Implement `services/agents/writer.py` — `WriterAgent` | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[]`, `skills=["./skills/writer"]`; NO internet search tool |
+| T-033 | Implement `services/agents/editor.py` — `EditorAgent` (Reviewer/QC) | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[]`, `skills=["./skills/editor"]`; role/goal/backstory set |
+| T-034 | Implement `services/agents/graph_generator.py` — `GraphGeneratorAgent` | `MED` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[CodeInterpreterTool()]`, `skills=["./skills/graph_generator"]` |
+| T-035 | Implement `services/agents/latex_formatter.py` — `LaTeXFormatterAgent` | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[FileWriterTool()]`, `skills=["./skills/latex_formatter"]` |
+| T-036 | Implement `services/agents/bidi_specialist.py` — `BiDiSpecialistAgent` | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[FileReadTool(), FileWriterTool()]`, `skills=["./skills/bidi_specialist"]` |
 | T-037 | Implement `services/tasks/task_definitions.py` — all `Task` objects | `HIGH` | `[ ]` | Developer | 6 tasks defined; each has `description`, `expected_output`, `agent` assignment; context chaining configured |
 | T-038 | Implement `services/crew_service.py` — `CrewService` | `HIGH` | `[ ]` | Developer | Builds `crewai.Crew` in Sequential or Hierarchical mode; `run_pipeline()` returns `ArticleResult` |
-| T-039 | Write unit tests for all 6 agents (`tests/unit/test_agents/`) | `HIGH` | `[ ]` | Developer | Tests: `build()` returns Agent, correct tools assigned (Researcher has SerperDevTool, Writer has none), role/goal/backstory set; LLM calls mocked |
+| T-039 | Write unit tests for all 6 agents (`tests/unit/test_agents/`) | `HIGH` | `[ ]` | Developer | Tests: `build()` returns Agent; correct tools assigned (Researcher→SerperDevTool, GraphGenerator→CodeInterpreterTool, LaTeXFormatter→FileWriterTool, BiDi→FileReadTool+FileWriterTool, Writer/Editor→[]); `skills=` path present for all 6; LLM calls mocked |
 | T-040 | Write unit tests for `CrewService` (`tests/unit/test_services/test_crew_service.py`) | `HIGH` | `[ ]` | Developer | Tests: crew assembles correctly, pipeline runs, context passes between agents; all LLM + Serper calls mocked |
 
 ---
@@ -219,8 +221,8 @@
 
 | Phase | Milestone | Tasks | Done | In Progress | Not Started |
 |-------|-----------|-------|------|-------------|-------------|
-| 1 | M1 — Documentation | T-001 to T-013 | 13 | 0 | 0 |
-| 2 | M2 — Project Skeleton | T-014 to T-024 | 0 | 0 | 11 |
+| 1 | M1 — Documentation | T-001 to T-013 + T-011b + T-011c | 15 | 0 | 0 |
+| 2 | M2 — Project Skeleton | T-014 to T-024 | 11 | 0 | 0 |
 | 3 | M3 — Core Agents | T-025 to T-040 | 0 | 0 | 16 |
 | 4 | M4 — Content Pipeline | T-041 to T-047 | 0 | 0 | 7 |
 | 5 | M5 — Visual Elements | T-048 to T-053 | 0 | 0 | 6 |
@@ -228,7 +230,7 @@
 | 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 0 | 0 | 6 |
 | 8 | M8 pre — Cost Tracking | T-068 to T-073 | 0 | 0 | 6 |
 | 9 | M8 — Integration & QA | T-074 to T-087 | 0 | 0 | 14 |
-| **Total** | | **87 tasks** | **13** | **0** | **74** |
+| **Total** | | **89 tasks** | **26** | **0** | **63** |
 
 ---
 
