@@ -45,7 +45,7 @@
 | T-010 | Create `docs/PRD_cost_tracker.md` — dedicated PRD for token tracking & cost analysis | `MED` | `[x]` | Developer | CallRecord schema, per-agent breakdown, cross-model comparison, budget alert, report format |
 | T-011 | Create `docs/PRD_research_tools.md` — dedicated PRD for SerperDevTool internet search | `HIGH` | `[x]` | Developer | SerperDevTool integration, SERPER_API_KEY management, tool isolation rule, test scenarios |
 | T-012 | Create `README.md` — full user manual at project root | `HIGH` | `[x]` | Developer | Installation, usage, examples, config guide, contribution guidelines, license |
-| T-013 | Create `docs/prompts_book.md` — Prompt Engineering Log | `MED` | `[ ]` | Developer | Every significant prompt used logged with context, goal, received output, refinements |
+| T-013 | Create `docs/prompts_book.md` — Prompt Engineering Log | `MED` | `[x]` | Developer | Every significant prompt used logged with context, goal, received output, refinements |
 
 ---
 
@@ -219,7 +219,7 @@
 
 | Phase | Milestone | Tasks | Done | In Progress | Not Started |
 |-------|-----------|-------|------|-------------|-------------|
-| 1 | M1 — Documentation | T-001 to T-013 | 12 | 0 | 1 |
+| 1 | M1 — Documentation | T-001 to T-013 | 13 | 0 | 0 |
 | 2 | M2 — Project Skeleton | T-014 to T-024 | 0 | 0 | 11 |
 | 3 | M3 — Core Agents | T-025 to T-040 | 0 | 0 | 16 |
 | 4 | M4 — Content Pipeline | T-041 to T-047 | 0 | 0 | 7 |
@@ -228,7 +228,7 @@
 | 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 0 | 0 | 6 |
 | 8 | M8 pre — Cost Tracking | T-068 to T-073 | 0 | 0 | 6 |
 | 9 | M8 — Integration & QA | T-074 to T-087 | 0 | 0 | 14 |
-| **Total** | | **87 tasks** | **12** | **0** | **75** |
+| **Total** | | **87 tasks** | **13** | **0** | **74** |
 
 ---
 
