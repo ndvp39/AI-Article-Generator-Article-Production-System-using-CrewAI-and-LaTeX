@@ -260,7 +260,7 @@ This system solves the problem by:
 ## 6. Assumptions, Dependencies & Constraints
 
 ### 6.1 Assumptions
-- LLM API (Claude or OpenAI) is available with a valid key stored in `.env`.
+- LLM API is available with a valid key stored in `.env`. Supported providers: **Anthropic Claude** (`LLM_API_KEY`) and **Google Gemini** (`GEMINI_API_KEY`). The active provider is controlled by `ACTIVE_LLM=claude|gemini`.
 - A valid **Serper API key** (`SERPER_API_KEY`) is available in `.env` for the Researcher agent's internet search.
 - MiKTeX is installed with LuaLaTeX, biber, and relevant Hebrew/BiDi packages.
 - Python 3.10+ and `uv` are installed on the host machine.
@@ -270,9 +270,11 @@ This system solves the problem by:
 
 | Dependency | Minimum Version | Purpose |
 |-----------|----------------|---------|
-| crewai | ≥ 0.28.0 | Multi-agent orchestration |
-| crewai-tools | ≥ 0.1.0 | SerperDevTool and other built-in agent tools |
-| anthropic | latest | LLM provider (Claude) |
+| crewai | ≥ 0.80.0 | Multi-agent orchestration |
+| crewai[google-genai] | ≥ 0.80.0 | Gemini LLM support via Google Gen AI |
+| crewai-tools | ≥ 0.17.0 | SerperDevTool and other built-in agent tools |
+| anthropic | latest | LLM provider (Claude) — used when `ACTIVE_LLM=claude` |
+| google-genai | latest | LLM provider (Gemini) — used when `ACTIVE_LLM=gemini` |
 | matplotlib | ≥ 3.7.0 | Python graph generation |
 | python-dotenv | ≥ 1.0.0 | Environment variable loading |
 | MiKTeX | latest | LaTeX compilation (external) |
@@ -283,6 +285,7 @@ This system solves the problem by:
 ### 6.3 Constraints
 - LaTeX engine: **LuaLaTeX or XeLaTeX only** (pdflatex does not support Hebrew/BiDi).
 - Package manager: **`uv` only** — `pip` is forbidden per guidelines.
+- LLM provider: **Claude or Gemini only** — controlled via `ACTIVE_LLM` env var. Only one provider's API key is required at a time.
 - File size: **≤ 150 lines of code** per source file.
 - Test coverage: **≥ 85%** measured by `pytest --cov`.
 - Secrets: **never in source code** — only via `.env`. Required secrets: `LLM_API_KEY`, `SERPER_API_KEY`.

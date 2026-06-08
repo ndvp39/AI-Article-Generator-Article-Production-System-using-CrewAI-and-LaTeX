@@ -656,6 +656,19 @@ graph TD
 
 ---
 
+### ADR-007: Dual-LLM Architecture — Claude and Gemini
+
+| Field | Detail |
+|-------|--------|
+| **Status** | Accepted |
+| **Decision** | Support both Anthropic Claude and Google Gemini as interchangeable LLM providers via a single `ACTIVE_LLM` environment variable toggle |
+| **Context** | The project should not be locked to a single LLM vendor. Gemini offers competitive pricing (especially `gemini-2.0-flash`) and may be preferred depending on budget or availability |
+| **Rationale** | A centralized `llm_factory.build_llm()` function reads `ACTIVE_LLM` from `.env`, selects the correct API key (`LLM_API_KEY` for Claude, `GEMINI_API_KEY` for Gemini), and returns a `crewai.LLM` instance. All 6 agents receive this instance at construction — no agent-level changes required |
+| **Alternatives considered** | Hard-coded Claude — rejected; locks users to one vendor and one API key. Per-agent provider config — rejected; duplicates configuration and risks agents using different providers inconsistently |
+| **Trade-offs** | Requires `crewai[google-genai]` extra dependency for Gemini; only one provider is active per run |
+
+---
+
 ### ADR-005: `uv` as Sole Package Manager
 
 | Field | Detail |
@@ -713,10 +726,20 @@ graph TD
 
 ### 7.0 Required `.env` Keys
 ```
-LLM_API_KEY=your_claude_or_openai_key_here
+# LLM provider toggle — "claude" (default) or "gemini"
+ACTIVE_LLM=claude
+
+# Anthropic Claude — required when ACTIVE_LLM=claude
+LLM_API_KEY=your_anthropic_api_key_here
+
+# Google Gemini — required when ACTIVE_LLM=gemini
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Serper — always required for ResearcherAgent
 SERPER_API_KEY=your_serper_api_key_here
 ```
 > `SERPER_API_KEY` is required for the Researcher agent's `SerperDevTool`. Without it the pipeline will fail at Task 1.
+> Only one of `LLM_API_KEY` or `GEMINI_API_KEY` is needed per run, depending on `ACTIVE_LLM`.
 
 ### 7.1 `ArticleConfig` (loaded from `config/setup.json`)
 ```json

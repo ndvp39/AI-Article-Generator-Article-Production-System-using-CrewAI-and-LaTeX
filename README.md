@@ -41,10 +41,12 @@ The pipeline uses **6 specialized AI agents** working in sequence:
 
 ### API Keys Required
 
-| Key | Where to Get | Usage |
-|-----|-------------|-------|
-| `LLM_API_KEY` | [Anthropic Console](https://console.anthropic.com) | Powers all 6 AI agents |
-| `SERPER_API_KEY` | [serper.dev](https://serper.dev) | Google Search for Researcher agent |
+| Key | Where to Get | When Required |
+|-----|-------------|---------------|
+| `ACTIVE_LLM` | — (set to `claude` or `gemini`) | Always — controls LLM provider |
+| `LLM_API_KEY` | [Anthropic Console](https://console.anthropic.com) | When `ACTIVE_LLM=claude` |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/app/apikey) | When `ACTIVE_LLM=gemini` |
+| `SERPER_API_KEY` | [serper.dev](https://serper.dev) | Always — Google Search for Researcher agent |
 
 ---
 
@@ -99,7 +101,16 @@ Copy-Item .env-example .env
 
 Edit `.env` and fill in your keys:
 ```
+# Choose your LLM provider: "claude" or "gemini"
+ACTIVE_LLM=claude
+
+# Anthropic Claude (required when ACTIVE_LLM=claude)
 LLM_API_KEY=your_anthropic_api_key_here
+
+# Google Gemini (required when ACTIVE_LLM=gemini)
+GEMINI_API_KEY=your_gemini_api_key_here
+
+# Serper — always required
 SERPER_API_KEY=your_serper_api_key_here
 ```
 
@@ -418,17 +429,25 @@ For full architecture details, see `docs/PLAN.md`.
 
 ## Configuration Guide
 
-### Changing the LLM Model
+### Switching LLM Provider
 
-Edit `config/setup.json`:
-```json
-"agents": { "model": "claude-haiku-3-5" }
+The system supports **Claude** (Anthropic) and **Gemini** (Google) via a single `.env` toggle:
+
+```
+# Use Claude (default)
+ACTIVE_LLM=claude
+LLM_API_KEY=your_anthropic_key
+
+# Use Gemini
+ACTIVE_LLM=gemini
+GEMINI_API_KEY=your_gemini_key
 ```
 
-Or override at runtime:
-```powershell
-uv run python src/main.py --topic "..." --model claude-haiku-3-5
-```
+Default models are defined in `src/article_generator/constants.py`:
+- Claude: `claude-sonnet-4-6`
+- Gemini: `gemini/gemini-2.0-flash`
+
+The active models can also be adjusted in `config/setup.json` under `agents.claude_model` and `agents.gemini_model`.
 
 ### Adjusting Rate Limits
 

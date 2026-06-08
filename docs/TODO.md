@@ -90,23 +90,23 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-029 | Implement `services/tools/search_tools.py` — `SerperDevTool` wrapper and factory | `HIGH` | `[ ]` | Developer | `SerperDevTool` configured with `SERPER_API_KEY` from env; tool factory returns configured instance; raises `EnvironmentError` if key missing |
-| T-030 | Write unit tests for `search_tools.py` (`tests/unit/test_tools/test_search_tools.py`) | `HIGH` | `[ ]` | Developer | Tests: tool created with valid key, raises on missing key; external Serper API mocked |
+| T-029 | Implement `services/tools/search_tools.py` — `SerperDevTool` wrapper and factory | `HIGH` | `[x]` | Developer | `SerperDevTool` configured with `SERPER_API_KEY` from env; tool factory returns configured instance; raises `EnvironmentError` if key missing |
+| T-030 | Write unit tests for `search_tools.py` (`tests/unit/test_tools/test_search_tools.py`) | `HIGH` | `[x]` | Developer | Tests: tool created with valid key, raises on missing key; external Serper API mocked |
 
 ### 3C — Agent Definitions
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-031 | Implement `services/agents/researcher.py` — `ResearcherAgent` | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[SerperDevTool()]`, `skills=["./skills/researcher"]`; role/goal/backstory set |
-| T-032 | Implement `services/agents/writer.py` — `WriterAgent` | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[]`, `skills=["./skills/writer"]`; NO internet search tool |
-| T-033 | Implement `services/agents/editor.py` — `EditorAgent` (Reviewer/QC) | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[]`, `skills=["./skills/editor"]`; role/goal/backstory set |
-| T-034 | Implement `services/agents/graph_generator.py` — `GraphGeneratorAgent` | `MED` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[CodeInterpreterTool()]`, `skills=["./skills/graph_generator"]` |
-| T-035 | Implement `services/agents/latex_formatter.py` — `LaTeXFormatterAgent` | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[FileWriterTool()]`, `skills=["./skills/latex_formatter"]` |
-| T-036 | Implement `services/agents/bidi_specialist.py` — `BiDiSpecialistAgent` | `HIGH` | `[ ]` | Developer | `build()` returns `crewai.Agent` with `tools=[FileReadTool(), FileWriterTool()]`, `skills=["./skills/bidi_specialist"]` |
-| T-037 | Implement `services/tasks/task_definitions.py` — all `Task` objects | `HIGH` | `[ ]` | Developer | 6 tasks defined; each has `description`, `expected_output`, `agent` assignment; context chaining configured |
-| T-038 | Implement `services/crew_service.py` — `CrewService` | `HIGH` | `[ ]` | Developer | Builds `crewai.Crew` in Sequential or Hierarchical mode; `run_pipeline()` returns `ArticleResult` |
-| T-039 | Write unit tests for all 6 agents (`tests/unit/test_agents/`) | `HIGH` | `[ ]` | Developer | Tests: `build()` returns Agent; correct tools assigned (Researcher→SerperDevTool, GraphGenerator→CodeInterpreterTool, LaTeXFormatter→FileWriterTool, BiDi→FileReadTool+FileWriterTool, Writer/Editor→[]); `skills=` path present for all 6; LLM calls mocked |
-| T-040 | Write unit tests for `CrewService` (`tests/unit/test_services/test_crew_service.py`) | `HIGH` | `[ ]` | Developer | Tests: crew assembles correctly, pipeline runs, context passes between agents; all LLM + Serper calls mocked |
+| T-031 | Implement `services/agents/researcher.py` — `ResearcherAgent` | `HIGH` | `[x]` | Developer | `build()` returns `crewai.Agent` with `tools=[SerperDevTool()]`, `skills=["./skills/researcher"]`; role/goal/backstory set |
+| T-032 | Implement `services/agents/writer.py` — `WriterAgent` | `HIGH` | `[x]` | Developer | `build()` returns `crewai.Agent` with `tools=[]`, `skills=["./skills/writer"]`; NO internet search tool |
+| T-033 | Implement `services/agents/editor.py` — `EditorAgent` (Reviewer/QC) | `HIGH` | `[x]` | Developer | `build()` returns `crewai.Agent` with `tools=[]`, `skills=["./skills/editor"]`; role/goal/backstory set |
+| T-034 | Implement `services/agents/graph_generator.py` — `GraphGeneratorAgent` | `MED` | `[x]` | Developer | `build()` returns `crewai.Agent` with `tools=[CodeInterpreterTool()]`, `skills=["./skills/graph_generator"]` |
+| T-035 | Implement `services/agents/latex_formatter.py` — `LaTeXFormatterAgent` | `HIGH` | `[x]` | Developer | `build()` returns `crewai.Agent` with `tools=[FileWriterTool()]`, `skills=["./skills/latex_formatter"]` |
+| T-036 | Implement `services/agents/bidi_specialist.py` — `BiDiSpecialistAgent` | `HIGH` | `[x]` | Developer | `build()` returns `crewai.Agent` with `tools=[FileReadTool(), FileWriterTool()]`, `skills=["./skills/bidi_specialist"]` |
+| T-037 | Implement `services/tasks/task_definitions.py` — all `Task` objects | `HIGH` | `[x]` | Developer | 6 tasks defined; each has `description`, `expected_output`, `agent` assignment; context chaining configured |
+| T-038 | Implement `services/crew_service.py` — `CrewService` | `HIGH` | `[x]` | Developer | Builds `crewai.Crew` in Sequential or Hierarchical mode; `run_pipeline()` returns `ArticleResult` |
+| T-039 | Write unit tests for all 6 agents (`tests/unit/test_agents/`) | `HIGH` | `[x]` | Developer | Tests: `build()` returns Agent; correct tools assigned (Researcher→SerperDevTool, GraphGenerator→CodeInterpreterTool, LaTeXFormatter→FileWriterTool, BiDi→FileReadTool+FileWriterTool, Writer/Editor→[]); `skills=` path present for all 6; LLM calls mocked |
+| T-040 | Write unit tests for `CrewService` (`tests/unit/test_services/test_crew_service.py`) | `HIGH` | `[x]` | Developer | Tests: crew assembles correctly, pipeline runs, context passes between agents; all LLM + Serper calls mocked |
 
 ---
 
@@ -193,6 +193,24 @@
 
 ---
 
+## Phase 2.5 — Dual-LLM Architecture (Post-Skeleton Addition)
+
+> **Goal:** Support Claude and Gemini as interchangeable LLM providers via a single `.env` toggle.  
+> **Exit Criteria:** `ACTIVE_LLM=gemini` uses Gemini; `ACTIVE_LLM=claude` uses Claude; all docs updated.
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-A01 | Create `shared/llm_factory.py` — `build_llm()` factory | `HIGH` | `[x]` | Developer | Reads `ACTIVE_LLM` env var; returns `crewai.LLM` for Claude or Gemini; raises on missing key |
+| T-A02 | Update `constants.py` — add LLM provider constants | `HIGH` | `[x]` | Developer | `LLM_PROVIDER_CLAUDE`, `LLM_PROVIDER_GEMINI`, `DEFAULT_CLAUDE_MODEL`, `DEFAULT_GEMINI_MODEL` defined |
+| T-A03 | Update `.env-example` — add `ACTIVE_LLM` and `GEMINI_API_KEY` | `HIGH` | `[x]` | Developer | `.env-example` has all 4 keys with clear comments |
+| T-A04 | Update `config/setup.json` — add `claude_model` and `gemini_model` fields | `MED` | `[x]` | Developer | Both model names present under `agents`; backward compatible |
+| T-A05 | Update `config/model_pricing.json` — add Gemini model pricing | `MED` | `[x]` | Developer | ≥ 2 Gemini models added with correct per-million-token pricing |
+| T-A06 | Update `README.md` — reflect dual-LLM keys and config toggle | `HIGH` | `[x]` | Developer | API Keys table, `.env` template, and Config Guide updated |
+| T-A07 | Update `docs/PRD.md` — reflect dual-LLM support in requirements | `HIGH` | `[x]` | Developer | §6.1 Assumptions, §6.2 Dependencies, §6.3 Constraints updated |
+| T-A08 | Update `docs/PLAN.md` — add ADR for dual-LLM; update .env schema | `HIGH` | `[x]` | Developer | New ADR-007 added; §7.0 .env keys schema updated |
+
+---
+
 ## Phase 9 — Integration & QA (Milestone M8)
 
 > **Goal:** Full pipeline passes end-to-end; all quality gates met.  
@@ -223,7 +241,7 @@
 |-------|-----------|-------|------|-------------|-------------|
 | 1 | M1 — Documentation | T-001 to T-013 + T-011b + T-011c | 15 | 0 | 0 |
 | 2 | M2 — Project Skeleton | T-014 to T-024 | 11 | 0 | 0 |
-| 3 | M3 — Core Agents | T-025 to T-040 | 4 | 0 | 12 |
+| 3 | M3 — Core Agents | T-025 to T-040 | 14 | 0 | 2 |
 | 4 | M4 — Content Pipeline | T-041 to T-047 | 0 | 0 | 7 |
 | 5 | M5 — Visual Elements | T-048 to T-053 | 0 | 0 | 6 |
 | 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 0 | 0 | 8 |

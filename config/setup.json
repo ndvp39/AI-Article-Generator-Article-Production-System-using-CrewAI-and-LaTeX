@@ -11,7 +11,8 @@
       "min_searches": 3
     },
     "agents": {
-      "model": "claude-sonnet-4-5",
+      "claude_model": "claude-sonnet-4-6",
+      "gemini_model": "gemini/gemini-2.0-flash",
       "temperature": 0.7,
       "max_tokens": 8192,
       "max_iter": 10
