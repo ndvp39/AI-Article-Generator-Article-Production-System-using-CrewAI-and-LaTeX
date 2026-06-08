@@ -15,6 +15,7 @@ RATE_LIMITS_CONFIG_FILE = "rate_limits.json"
 MODEL_PRICING_CONFIG_FILE = "model_pricing.json"
 
 # Output file names
+ARTICLE_MD_FILE = "article.md"
 ARTICLE_TEX_FILE = "article.tex"
 ARTICLE_PDF_FILE = "article.pdf"
 REFERENCES_BIB_FILE = "references.bib"

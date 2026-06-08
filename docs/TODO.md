@@ -117,11 +117,11 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-041 | Implement `services/file_manager.py` — `FileManager` | `MED` | `[ ]` | Developer | Read/write Markdown, JSON, config; all paths relative; no absolute paths in code |
-| T-042 | Implement `sdk/sdk.py` — `ArticleGeneratorSDK` skeleton | `HIGH` | `[ ]` | Developer | All public methods defined; delegates to services; no business logic in SDK itself |
-| T-043 | Implement `src/main.py` — CLI entry point | `HIGH` | `[ ]` | Developer | Loads config, instantiates SDK, calls `generate_article()`, prints summary; handles errors gracefully |
-| T-044 | Write unit tests for `FileManager` (`tests/unit/test_services/test_file_manager.py`) | `MED` | `[ ]` | Developer | Tests: read/write Markdown, JSON; error on missing file; no real FS calls (mocked) |
-| T-045 | Write unit tests for `ArticleGeneratorSDK` (`tests/unit/test_sdk/test_sdk.py`) | `HIGH` | `[ ]` | Developer | Tests: correct delegation to services; method signatures match PLAN.md §6.1 |
+| T-041 | Implement `services/file_manager.py` — `FileManager` | `MED` | `[x]` | Developer | Read/write Markdown, JSON, config; all paths relative; no absolute paths in code |
+| T-042 | Implement `sdk/sdk.py` — `ArticleGeneratorSDK` skeleton | `HIGH` | `[x]` | Developer | All public methods defined; delegates to services; no business logic in SDK itself |
+| T-043 | Implement `src/main.py` — CLI entry point | `HIGH` | `[x]` | Developer | Loads config, instantiates SDK, calls `generate_article()`, prints summary; handles errors gracefully |
+| T-044 | Write unit tests for `FileManager` (`tests/unit/test_services/test_file_manager.py`) | `MED` | `[x]` | Developer | Tests: read/write Markdown, JSON; error on missing file; no real FS calls (mocked) |
+| T-045 | Write unit tests for `ArticleGeneratorSDK` (`tests/unit/test_sdk/test_sdk.py`) | `HIGH` | `[x]` | Developer | Tests: correct delegation to services; method signatures match PLAN.md §6.1 |
 | T-046 | End-to-end test: Researcher performs live internet search | `HIGH` | `[ ]` | Developer | Running with a real `SERPER_API_KEY` returns search results; outline includes factual data |
 | T-047 | End-to-end test: Full Markdown article generated | `HIGH` | `[ ]` | Developer | Output Markdown contains: abstract, introduction, ≥ 4 chapters, conclusion, bibliography list |
 
