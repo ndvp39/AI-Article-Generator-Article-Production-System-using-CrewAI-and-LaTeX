@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 
 import pytest
 
 from article_generator.services.file_manager import FileManager
-
 
 # ---------------------------------------------------------------------------
 # save_markdown / read_markdown

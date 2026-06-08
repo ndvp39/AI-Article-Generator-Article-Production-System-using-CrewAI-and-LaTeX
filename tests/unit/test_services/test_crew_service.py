@@ -1,17 +1,24 @@
 from __future__ import annotations
 
-from contextlib import ExitStack
 from unittest.mock import MagicMock, patch
 
 import pytest
-from crewai import Process
 
+from article_generator.services.agents.bidi_specialist import BiDiSpecialistAgent
+from article_generator.services.agents.editor import EditorAgent
+from article_generator.services.agents.graph_generator import GraphGeneratorAgent
+from article_generator.services.agents.latex_formatter import LaTeXFormatterAgent
+from article_generator.services.agents.researcher import ResearcherAgent
+from article_generator.services.agents.writer import WriterAgent
 from article_generator.services.crew_service import CrewService
 from article_generator.shared.models import ArticleResult
 
 _BASE = "article_generator.services.crew_service"
-_AGENT_KEYS = ("researcher", "writer", "editor", "graph", "latex", "bidi")
 
+
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
 
 def _make_cfg(temperature: str = "0.7") -> MagicMock:
     cfg = MagicMock()
@@ -19,96 +26,128 @@ def _make_cfg(temperature: str = "0.7") -> MagicMock:
     return cfg
 
 
-def _make_crew_output(raw: str = "body", tasks=None) -> MagicMock:
-    out = MagicMock()
-    out.raw = raw
-    out.tasks_output = tasks  # None triggers the `or []` fallback in run_pipeline
-    return out
+def _make_result(**kwargs) -> ArticleResult:
+    defaults = {
+        "success": True,
+        "markdown_content": "article body",
+        "tex_path": "results/article.tex",
+        "bib_path": "results/references.bib",
+        "pdf_path": "results/article.pdf",
+    }
+    defaults.update(kwargs)
+    return ArticleResult(**defaults)
 
+
+# ---------------------------------------------------------------------------
+# Fixture — patches ProcessOrchestrator at the crew_service module level
+# ---------------------------------------------------------------------------
 
 @pytest.fixture()
-def mocks():
-    with ExitStack() as stack:
-        m = {
-            "llm": stack.enter_context(patch(f"{_BASE}.build_llm")),
-            "tasks": stack.enter_context(patch(f"{_BASE}.build_tasks")),
-            "crew": stack.enter_context(patch(f"{_BASE}.Crew")),
-            "researcher": stack.enter_context(patch(f"{_BASE}.ResearcherAgent")),
-            "writer": stack.enter_context(patch(f"{_BASE}.WriterAgent")),
-            "editor": stack.enter_context(patch(f"{_BASE}.EditorAgent")),
-            "graph": stack.enter_context(patch(f"{_BASE}.GraphGeneratorAgent")),
-            "latex": stack.enter_context(patch(f"{_BASE}.LaTeXFormatterAgent")),
-            "bidi": stack.enter_context(patch(f"{_BASE}.BiDiSpecialistAgent")),
-        }
-        m["crew"].return_value.kickoff.return_value = _make_crew_output()
-        yield m
+def mock_orch():
+    with patch(f"{_BASE}.ProcessOrchestrator") as MockOrch:
+        MockOrch.return_value.run.return_value = _make_result()
+        yield MockOrch
 
 
-def test_run_pipeline_returns_article_result(mocks):
+# ---------------------------------------------------------------------------
+# run_pipeline — delegation to ProcessOrchestrator
+# ---------------------------------------------------------------------------
+
+def test_run_pipeline_returns_article_result(mock_orch):
     result = CrewService(_make_cfg()).run_pipeline("ML")
     assert isinstance(result, ArticleResult)
+
+
+def test_run_pipeline_success_is_true(mock_orch):
+    result = CrewService(_make_cfg()).run_pipeline("ML")
     assert result.success is True
 
 
-def test_run_pipeline_uses_temperature_from_config(mocks):
-    CrewService(_make_cfg("0.3")).run_pipeline("topic")
-    mocks["llm"].assert_called_once_with(temperature=0.3)
+def test_run_pipeline_loads_config_once(mock_orch):
+    cfg = _make_cfg()
+    CrewService(cfg).run_pipeline("topic")
+    cfg.load_setup.assert_called_once()
 
 
-def test_run_pipeline_passes_topic_to_build_tasks(mocks):
+def test_run_pipeline_passes_setup_dict_to_orchestrator(mock_orch):
+    cfg = _make_cfg("0.5")
+    CrewService(cfg).run_pipeline("topic")
+    mock_orch.assert_called_once_with(config={"agents": {"temperature": "0.5"}})
+
+
+def test_run_pipeline_passes_topic_to_orchestrator_run(mock_orch):
     CrewService(_make_cfg()).run_pipeline("quantum computing")
-    assert mocks["tasks"].call_args.kwargs["topic"] == "quantum computing"
+    mock_orch.return_value.run.assert_called_once_with("quantum computing")
 
 
-def test_run_pipeline_uses_sequential_process(mocks):
+def test_run_pipeline_returns_orchestrator_result_unchanged(mock_orch):
+    expected = _make_result(markdown_content="generated content")
+    mock_orch.return_value.run.return_value = expected
+    result = CrewService(_make_cfg()).run_pipeline("topic")
+    assert result is expected
+
+
+def test_run_pipeline_creates_exactly_one_orchestrator(mock_orch):
     CrewService(_make_cfg()).run_pipeline("topic")
-    assert mocks["crew"].call_args.kwargs["process"] == Process.sequential
+    mock_orch.assert_called_once()
 
 
-def test_run_pipeline_calls_kickoff_once(mocks):
+def test_run_pipeline_calls_orchestrator_run_exactly_once(mock_orch):
     CrewService(_make_cfg()).run_pipeline("topic")
-    mocks["crew"].return_value.kickoff.assert_called_once()
+    mock_orch.return_value.run.assert_called_once()
 
 
-def test_run_pipeline_uses_crew_raw_as_markdown_content(mocks):
-    mocks["crew"].return_value.kickoff.return_value = _make_crew_output(raw="article text")
-    result = CrewService(_make_cfg()).run_pipeline("topic")
-    assert result.markdown_content == "article text"
+def test_run_pipeline_no_direct_crewai_imports():
+    """Confirm Crew and kickoff are not referenced in the module."""
+    import inspect
+
+    import article_generator.services.crew_service as mod
+    src = inspect.getsource(mod)
+    assert "kickoff" not in src
+    assert "from crewai" not in src
 
 
-def test_run_pipeline_maps_task_outputs_to_agent_outputs(mocks):
-    task_out = MagicMock()
-    task_out.agent = "researcher"
-    task_out.description = "Research the topic thoroughly and compile data"
-    task_out.raw = "research output"
-    mocks["crew"].return_value.kickoff.return_value = _make_crew_output(
-        raw="final", tasks=[task_out]
-    )
-    result = CrewService(_make_cfg()).run_pipeline("topic")
-    assert len(result.agent_outputs) == 1
-    ao = result.agent_outputs[0]
-    assert ao.agent_name == "researcher"
-    assert ao.content == "research output"
-    assert ao.status == "success"
+# ---------------------------------------------------------------------------
+# _build_agents — returns class references, not instances
+# ---------------------------------------------------------------------------
 
-
-def test_run_pipeline_none_tasks_output_gives_empty_agent_outputs(mocks):
-    mocks["crew"].return_value.kickoff.return_value = _make_crew_output(tasks=None)
-    result = CrewService(_make_cfg()).run_pipeline("topic")
-    assert result.agent_outputs == []
-
-
-def test_build_agents_returns_all_six_keys(mocks):
-    result = CrewService(_make_cfg())._build_agents(MagicMock())
+def test_build_agents_returns_all_six_keys():
+    result = CrewService(_make_cfg())._build_agents()
     assert set(result.keys()) == {
-        "researcher", "writer", "editor",
-        "graph_generator", "latex_formatter", "bidi_specialist",
+        "researcher",
+        "writer",
+        "editor",
+        "graph_generator",
+        "latex_formatter",
+        "bidi_specialist",
     }
 
 
-def test_build_agents_passes_llm_to_each_builder(mocks):
-    llm = MagicMock()
-    CrewService(_make_cfg())._build_agents(llm)
-    for key in _AGENT_KEYS:
-        mocks[key].assert_called_once_with(llm=llm)
-        mocks[key].return_value.build.assert_called_once()
+def test_build_agents_values_are_classes_not_instances():
+    result = CrewService(_make_cfg())._build_agents()
+    for key, val in result.items():
+        assert isinstance(val, type), f"'{key}' should be a class, got {type(val)}"
+
+
+def test_build_agents_researcher_is_researcher_agent_class():
+    assert CrewService(_make_cfg())._build_agents()["researcher"] is ResearcherAgent
+
+
+def test_build_agents_writer_is_writer_agent_class():
+    assert CrewService(_make_cfg())._build_agents()["writer"] is WriterAgent
+
+
+def test_build_agents_editor_is_editor_agent_class():
+    assert CrewService(_make_cfg())._build_agents()["editor"] is EditorAgent
+
+
+def test_build_agents_graph_generator_is_correct_class():
+    assert CrewService(_make_cfg())._build_agents()["graph_generator"] is GraphGeneratorAgent
+
+
+def test_build_agents_latex_formatter_is_correct_class():
+    assert CrewService(_make_cfg())._build_agents()["latex_formatter"] is LaTeXFormatterAgent
+
+
+def test_build_agents_bidi_specialist_is_correct_class():
+    assert CrewService(_make_cfg())._build_agents()["bidi_specialist"] is BiDiSpecialistAgent

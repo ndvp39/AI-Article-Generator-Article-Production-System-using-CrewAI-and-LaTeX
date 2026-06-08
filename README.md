@@ -3,26 +3,96 @@
 
 **Course:** AI Agents — MSC Course  
 **Lecturer:** Dr. Yoram Segal  
-**Version:** 1.00  
+**Version:** 1.10 — Multi-Process Architecture  
 
 ---
 
 ## Overview
 
-**AI Article Generator** is a CrewAI multi-agent pipeline that autonomously researches a topic, writes a professional academic article (~15 pages), and compiles it into a polished LaTeX PDF — complete with cover sheet, table of contents, bibliography, figures, formulas, and Hebrew-English bidirectional text.
+**AI Article Generator** is a multi-agent pipeline that autonomously researches a topic, writes a professional academic article (~15 pages), and compiles it into a polished LaTeX PDF — complete with cover sheet, table of contents, bibliography, figures, formulas, and Hebrew-English bidirectional text.
 
-The pipeline uses **6 specialized AI agents** working in sequence:
+The pipeline uses **6 specialized AI agents**, each running as an **isolated OS process**, communicating exclusively through typed IPC message queues. A **GatekeeperRouter** validates and routes every inter-agent message. A **Watchdog** monitors process health and enforces per-agent timeouts.
 
-| Agent | Role | Tools |
-|-------|------|-------|
-| ResearcherAgent | Live internet research via Google Search | SerperDevTool |
-| WriterAgent | Writes the full article in structured Markdown | None |
-| EditorAgent | Reviews and improves accuracy and clarity | None |
-| GraphGeneratorAgent | Generates topic-relevant matplotlib graph code | None |
-| LaTeXFormatterAgent | Converts Markdown to complete `.tex` document | None |
-| BiDiSpecialistAgent | Validates and fixes Hebrew–English BiDi | None |
+| Agent | Role | Tools | Process |
+|-------|------|-------|---------|
+| ResearcherAgent | Live internet research | SerperDevTool | `multiprocessing.Process` |
+| WriterAgent | Full article in structured Markdown | — | `multiprocessing.Process` |
+| EditorAgent | Accuracy and clarity review | — | `multiprocessing.Process` |
+| GraphGeneratorAgent | Generates matplotlib graph code | LocalCodeInterpreterTool | `multiprocessing.Process` |
+| LaTeXFormatterAgent | Converts Markdown to `.tex` | FileWriterTool | `multiprocessing.Process` |
+| BiDiSpecialistAgent | Hebrew–English BiDi validation | FileReadTool, FileWriterTool | `multiprocessing.Process` |
 
 **Output:** `results/article.pdf` — a fully compiled academic PDF.
+
+---
+
+## Architecture
+
+```
+CLI (src/main.py)
+    └── ArticleGeneratorSDK
+            └── CrewService
+                    └── ProcessOrchestrator
+                            │
+                            ├── [in_q_0] ──► AgentProcess: Researcher  ──► [out_q_0]
+                            │                                                    │
+                            │              GatekeeperRouter (validates + routes) │
+                            │                                                    ▼
+                            ├── [in_q_1] ──► AgentProcess: Writer      ──► [out_q_1]
+                            │                                                    │
+                            │              GatekeeperRouter                     ▼
+                            │                                                    │
+                            ├── [in_q_2] ──► AgentProcess: Editor      ──► [out_q_2]
+                            │                     ...
+                            ├── [in_q_3] ──► AgentProcess: GraphGen    ──► [out_q_3]
+                            ├── [in_q_4] ──► AgentProcess: LaTeX       ──► [out_q_4]
+                            └── [in_q_5] ──► AgentProcess: BiDi        ──► [out_q_5]
+                                                                              │
+                                                                         ArticleResult
+                            ┌─────────────────────────────────────────────────┘
+                            Watchdog (daemon thread — monitors all 6 PIDs, enforces timeouts)
+```
+
+### Key Components
+
+| Component | Location | Responsibility |
+|-----------|----------|---------------|
+| `ProcessOrchestrator` | `services/process_orchestrator.py` | Spawns all agent processes, owns all queues, drives pipeline start/finish |
+| `AgentProcessRunner` | `shared/process_runner.py` | Wraps one CrewAI agent in a `multiprocessing.Process`; agent initialised *inside* the subprocess |
+| `GatekeeperRouter` | `services/gatekeeper_router.py` | Daemon thread; validates `AgentMessage` schema; routes output → next input queue |
+| `Watchdog` | `services/watchdog.py` | Daemon thread; polls `is_alive()`; terminates timed-out processes; raises `AgentTimeoutError` |
+| `AgentMessage` / `AgentStatus` | `shared/ipc_models.py` | Typed dataclasses for all IPC communication |
+| `CrewService` | `services/crew_service.py` | Thin wrapper — delegates to `ProcessOrchestrator` |
+| `ArticleGeneratorSDK` | `sdk/sdk.py` | Single public entry point; delegates everything to services |
+
+### IPC Message Flow
+
+Every message between agents is an `AgentMessage` instance placed on a `multiprocessing.Queue`:
+
+```python
+@dataclass
+class AgentMessage:
+    sender: str        # e.g. "Senior Academic Researcher"
+    recipient: str     # e.g. "Academic Article Writer"
+    content: str       # agent output text
+    topic: str         # original article topic
+    message_id: str    # UUID — unique per message
+    timestamp: float   # time.time()
+    message_type: str  # "input" | "output" | "error"
+```
+
+The `GatekeeperRouter` intercepts every message, validates the schema, and raises `GatekeeperValidationError` if:
+- `content` is empty
+- `sender`/`recipient` pair is not a valid adjacent pipeline step
+- `message_type` is not a recognised value
+
+### Watchdog Behaviour
+
+The `Watchdog` polls every `WATCHDOG_POLL_INTERVAL_SECONDS` (default: 2 s):
+
+- **Unexpected crash** — `process.is_alive()` returns `False` before the agent finishes: records `AgentStatus(status="error")`, pipeline fails fast.
+- **Timeout exceeded** — agent runs longer than `AGENT_TIMEOUT_SECONDS[role]`: calls `process.terminate()`, records `AgentStatus(status="timeout")`, raises `AgentTimeoutError`.
+- **Healthy** — all processes alive and within timeout: `Watchdog.all_healthy()` returns `True`.
 
 ---
 
@@ -32,21 +102,23 @@ The pipeline uses **6 specialized AI agents** working in sequence:
 
 | Requirement | Version | Notes |
 |-------------|---------|-------|
-| Python | ≥ 3.10 | Required for `match` statements and modern type hints |
+| Python | ≥ 3.10 | Required for modern type hints and `match` statements |
 | uv | ≥ 0.4 | Package manager — `pip` is NOT used |
-| MiKTeX | ≥ 24.x | LaTeX distribution for Windows |
+| MiKTeX | ≥ 24.x | LaTeX distribution (Windows) |
 | LuaLaTeX | included with MiKTeX | Required for BiDi + Unicode support |
 | biber | included with MiKTeX | Bibliography processor |
-| FrankRuhlCLM font | MiKTeX Package Manager | Hebrew font for BiDi support |
+| FrankRuhlCLM font | MiKTeX Package Manager | Hebrew font |
+
+> `multiprocessing` is part of the Python standard library — no extra installation needed.
 
 ### API Keys Required
 
-| Key | Where to Get | When Required |
-|-----|-------------|---------------|
-| `ACTIVE_LLM` | — (set to `claude` or `gemini`) | Always — controls LLM provider |
+| Variable | Where to Get | When Required |
+|----------|-------------|---------------|
+| `ACTIVE_LLM` | — set to `claude` or `gemini` | Always |
 | `LLM_API_KEY` | [Anthropic Console](https://console.anthropic.com) | When `ACTIVE_LLM=claude` |
 | `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/app/apikey) | When `ACTIVE_LLM=gemini` |
-| `SERPER_API_KEY` | [serper.dev](https://serper.dev) | Always — Google Search for Researcher agent |
+| `SERPER_API_KEY` | [serper.dev](https://serper.dev) | Always — used by ResearcherAgent |
 
 ---
 
@@ -64,10 +136,6 @@ cd HW3
 ```powershell
 # Windows (PowerShell)
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-Verify:
-```powershell
 uv --version
 ```
 
@@ -77,16 +145,14 @@ uv --version
 uv sync
 ```
 
-This reads `pyproject.toml` and installs all dependencies into a managed virtual environment. No `pip install` is needed or permitted.
-
 ### 4. Install MiKTeX
 
-1. Download MiKTeX from [miktex.org/download](https://miktex.org/download)
-2. Run the installer; choose "Install for all users" for system-wide access
-3. After install, open **MiKTeX Console** and run **"Check for updates"**
-4. Install the Hebrew font: open MiKTeX Console → Packages → search `frankruhlclm` → Install
+1. Download from [miktex.org/download](https://miktex.org/download)
+2. Run installer — choose "Install for all users"
+3. Open **MiKTeX Console** → Check for updates
+4. Install Hebrew font: MiKTeX Console → Packages → search `frankruhlclm` → Install
 
-Verify LuaLaTeX and biber are available:
+Verify:
 ```powershell
 lualatex --version
 biber --version
@@ -94,14 +160,13 @@ biber --version
 
 ### 5. Configure API Keys
 
-Copy the example environment file:
 ```powershell
 Copy-Item .env-example .env
 ```
 
-Edit `.env` and fill in your keys:
+Edit `.env`:
 ```
-# Choose your LLM provider: "claude" or "gemini"
+# LLM provider: "claude" or "gemini"
 ACTIVE_LLM=claude
 
 # Anthropic Claude (required when ACTIVE_LLM=claude)
@@ -114,13 +179,11 @@ GEMINI_API_KEY=your_gemini_api_key_here
 SERPER_API_KEY=your_serper_api_key_here
 ```
 
-> **Security:** Never commit `.env` to version control. It is listed in `.gitignore`.
+> **Security:** `.env` is listed in `.gitignore`. Never commit it.
 
 ---
 
 ## Configuration
-
-All runtime configuration lives in the `config/` directory. Edit these files to customize the pipeline behavior without touching source code.
 
 ### `config/setup.json` — Main Application Config
 
@@ -135,7 +198,8 @@ All runtime configuration lives in the `config/` directory. Edit these files to 
       "citation_style": "numeric"
     },
     "agents": {
-      "model": "claude-sonnet-3-7",
+      "claude_model": "claude-sonnet-4-6",
+      "gemini_model": "gemini/gemini-2.0-flash",
       "temperature": 0.7,
       "max_tokens": 8192
     },
@@ -143,49 +207,35 @@ All runtime configuration lives in the `config/` directory. Edit these files to 
       "engine": "lualatex",
       "passes": 4,
       "output_dir": "results"
+    },
+    "cost": {
+      "budget_alert_usd": 1.00
     }
   }
 }
 ```
-
-| Key | Description | Default |
-|-----|-------------|---------|
-| `article.target_pages` | Target article length in pages | `15` |
-| `article.language` | Primary article language | `"english"` |
-| `agents.model` | LLM model for all agents | `"claude-sonnet-3-7"` |
-| `agents.temperature` | LLM sampling temperature | `0.7` |
-| `latex.engine` | LaTeX engine (`lualatex` or `xelatex`) | `"lualatex"` |
 
 ### `config/rate_limits.json` — API Rate Limits
 
-Controls the API Gatekeeper's rate limiting, queue depth, and retry behavior. Separate profiles for the LLM API and the Serper search API.
-
-Key settings:
-```json
-{
-  "rate_limits": {
-    "services": {
-      "default": { "requests_per_minute": 30, "max_retries": 3 },
-      "serper":  { "requests_per_minute": 10, "max_retries": 2 }
-    }
-  }
-}
-```
+Controls per-service rate limits, retry policy, and queue depth for the `ApiGatekeeper`.
 
 ### `config/model_pricing.json` — LLM Cost Pricing
 
-Used by the `CostTracker` to calculate USD costs and produce cross-model comparisons. Update when providers change their pricing.
+Used by `CostTracker` to compute USD costs and cross-model comparisons.
 
-```json
-{
-  "model_pricing": {
-    "models": {
-      "claude-sonnet-3-7": { "input_price_per_mtok": 3.00, "output_price_per_mtok": 15.00 },
-      "gpt-4o-mini":       { "input_price_per_mtok": 0.15, "output_price_per_mtok": 0.60  }
-    }
-  }
-}
+### Switching LLM Provider
+
 ```
+# Claude (default)
+ACTIVE_LLM=claude
+LLM_API_KEY=your_anthropic_key
+
+# Gemini
+ACTIVE_LLM=gemini
+GEMINI_API_KEY=your_gemini_key
+```
+
+Default models: `claude-sonnet-4-6` / `gemini/gemini-2.0-flash` (set in `constants.py`, overridable in `setup.json`).
 
 ---
 
@@ -193,103 +243,64 @@ Used by the `CostTracker` to calculate USD costs and produce cross-model compari
 
 ### Basic Usage
 
-Generate an article on any topic:
-
 ```powershell
-uv run python src/main.py --topic "Deep Learning in Medical Image Analysis"
+uv run python src/main.py "Deep Learning in Medical Image Analysis"
 ```
-
-The pipeline runs all 6 agents sequentially, compiles the LaTeX PDF, and prints a summary on completion.
 
 ### Command-Line Options
 
 ```
-usage: main.py [-h] --topic TOPIC [--output-dir OUTPUT_DIR] [--model MODEL]
-               [--budget BUDGET] [--no-bidi] [--verbose]
+usage: article-generator [-h] [--config PATH] topic
+
+positional arguments:
+  topic          Research topic for the article
 
 options:
-  --topic TOPIC           Article topic (required)
-  --output-dir DIR        Output directory (default: results/)
-  --model MODEL           Override LLM model from config
-  --budget BUDGET         Cost budget alert threshold in USD (e.g. 0.50)
-  --no-bidi               Skip BiDi Hebrew chapter (for testing)
-  --verbose               Enable verbose logging
+  -h, --help     show this help message and exit
+  --config PATH  Path to setup.json (default: config/setup.json)
 ```
 
 ### Examples
 
 ```powershell
 # Standard run
-uv run python src/main.py --topic "Transformer Architecture in NLP"
+uv run python src/main.py "Transformer Architecture in NLP"
 
-# With budget alert at $0.50
-uv run python src/main.py --topic "Reinforcement Learning" --budget 0.50
+# Custom config file
+uv run python src/main.py "Graph Neural Networks" --config my_config/setup.json
 
-# Verbose output for debugging
-uv run python src/main.py --topic "Graph Neural Networks" --verbose
-
-# Override model
-uv run python src/main.py --topic "Computer Vision" --model claude-haiku-3-5
+# Using the installed entry point
+uv run article-generator "Reinforcement Learning in Robotics"
 ```
 
 ### Using the SDK Directly
 
 ```python
 from article_generator.sdk.sdk import ArticleGeneratorSDK
-from article_generator.shared.config import ConfigManager
 
-config_manager = ConfigManager("config/")
-sdk = ArticleGeneratorSDK(config_manager)
+sdk = ArticleGeneratorSDK(config_path="config/setup.json")
+result = sdk.generate_article(topic="Federated Learning in Healthcare")
 
-result = sdk.generate("Federated Learning: Privacy-Preserving Machine Learning")
-
-print(f"PDF saved to: {result.pdf_path}")
-print(f"Total cost:   ${result.cost_report.run_summary.total_cost_usd:.4f}")
-print(f"Pages:        {result.page_count}")
-
-# Cross-model cost comparison
-comparison = sdk.compare_model_costs()
-for entry in comparison.alternatives:
-    marker = " ← actual" if entry.is_actual else ""
-    print(f"  {entry.model:30s}  ${entry.cost_usd:.4f}{marker}")
+print(f"Success:  {result.success}")
+print(f"LaTeX:    {result.tex_path}")
+print(f"PDF:      {result.pdf_path}")
+print(f"Agents:   {len(result.agent_outputs)} tasks completed")
 ```
 
 ---
 
 ## Output Files
 
-After a successful run, the following files are written to `results/`:
-
 ```
 results/
-├── article.pdf              ← final compiled PDF (primary output)
-├── article.tex              ← generated LaTeX source
-├── references.bib           ← generated bibliography file
-├── article.aux              ← LaTeX auxiliary (auto-generated)
-├── article.bbl              ← bibliography output (auto-generated)
-├── article.log              ← full LuaLaTeX compilation log
-├── cost_report.json         ← token usage and USD cost breakdown
+├── article.md               ← Markdown output from agent pipeline
+├── article.tex              ← Generated LaTeX source
+├── references.bib           ← Generated bibliography
+├── article.pdf              ← Final compiled PDF (primary output)
+├── article.log              ← LuaLaTeX compilation log
+├── cost_report.json         ← Token usage and USD cost breakdown
 └── figures/
-    └── graph.pdf            ← programmatically generated graph
-```
-
-### `cost_report.json` Structure
-
-```json
-{
-  "run_summary": {
-    "total_calls": 24,
-    "total_input_tokens": 48200,
-    "total_output_tokens": 12300,
-    "total_cost_usd": 0.329100,
-    "most_expensive_agent": "WriterAgent"
-  },
-  "per_agent": { ... },
-  "model_comparison": {
-    "cheapest_model": "gpt-4o-mini",
-    "alternatives": [ ... ]
-  }
-}
+    └── graph.pdf            ← Programmatically generated graph
 ```
 
 ---
@@ -299,29 +310,61 @@ results/
 ```
 HW3/
 ├── src/
+│   ├── main.py                              ← CLI entry point wrapper
 │   └── article_generator/
+│       ├── __main__.py                      ← CLI logic (argparse, dotenv, summary)
+│       ├── constants.py                     ← Immutable project constants
 │       ├── sdk/
-│       │   └── sdk.py                    ← ArticleGeneratorSDK (entry point)
+│       │   └── sdk.py                       ← ArticleGeneratorSDK (public entry point)
 │       ├── services/
-│       │   ├── agents/                   ← 6 CrewAI agent definitions
-│       │   ├── tasks/                    ← CrewAI task definitions
+│       │   ├── agents/                      ← 6 CrewAI agent definitions
+│       │   │   ├── researcher.py
+│       │   │   ├── writer.py
+│       │   │   ├── editor.py
+│       │   │   ├── graph_generator.py
+│       │   │   ├── latex_formatter.py
+│       │   │   └── bidi_specialist.py
+│       │   ├── tasks/
+│       │   │   └── task_definitions.py      ← CrewAI Task objects + context chain
 │       │   ├── tools/
-│       │   │   └── search_tools.py       ← SerperDevTool factory
-│       │   ├── crew_service.py           ← CrewAI crew assembly
-│       │   ├── latex_compiler.py         ← LaTeX generation + 4-pass compile
-│       │   ├── graph_runner.py           ← Subprocess graph execution
-│       │   ├── cost_tracker.py           ← Token & cost analysis
-│       │   └── file_manager.py           ← File I/O
-│       ├── shared/
-│       │   ├── config.py                 ← ConfigManager
-│       │   ├── gatekeeper.py             ← ApiGatekeeper (rate limit + queue)
-│       │   ├── bidi_helpers.py           ← BiDi LaTeX utilities
-│       │   └── version.py
-│       ├── constants.py
-│       └── __init__.py
+│       │   │   ├── search_tools.py          ← SerperDevTool factory + isolation check
+│       │   │   └── code_interpreter_tool.py ← LocalCodeInterpreterTool (subprocess)
+│       │   ├── crew_service.py              ← Delegates to ProcessOrchestrator
+│       │   ├── process_orchestrator.py      ← Spawns agents, owns queues, drives pipeline
+│       │   ├── gatekeeper_router.py         ← IPC message validation + routing (thread)
+│       │   ├── watchdog.py                  ← Process health monitor + timeout (thread)
+│       │   ├── file_manager.py              ← File I/O (read/write Markdown, JSON)
+│       │   ├── latex_compiler.py            ← LaTeX generation + 4-pass compile
+│       │   ├── graph_runner.py              ← Subprocess graph execution
+│       │   └── cost_tracker.py              ← Token & USD cost analysis
+│       └── shared/
+│           ├── ipc_models.py                ← AgentMessage + AgentStatus dataclasses
+│           ├── process_runner.py            ← AgentProcessRunner (one agent per Process)
+│           ├── config.py                    ← ConfigManager
+│           ├── gatekeeper.py                ← ApiGatekeeper (rate limit + queue + retry)
+│           ├── llm_factory.py               ← build_llm() — Claude / Gemini toggle
+│           ├── models.py                    ← AgentOutput, ArticleResult dataclasses
+│           └── version.py
 ├── tests/
-│   ├── unit/                             ← Unit tests (mocked APIs)
-│   └── integration/                      ← Integration tests (real compilation)
+│   ├── unit/
+│   │   ├── test_agents/                     ← Agent builder tests (mocked)
+│   │   ├── test_services/                   ← Service tests (mocked)
+│   │   │   ├── test_crew_service.py
+│   │   │   ├── test_process_orchestrator.py
+│   │   │   ├── test_gatekeeper_router.py
+│   │   │   ├── test_watchdog.py
+│   │   │   └── test_file_manager.py
+│   │   ├── test_shared/
+│   │   │   ├── test_ipc_models.py
+│   │   │   └── test_process_runner.py
+│   │   ├── test_sdk/
+│   │   │   └── test_sdk.py
+│   │   └── test_tools/
+│   └── integration/
+│       ├── test_researcher_search.py        ← Live Serper search (skipped if no key)
+│       ├── test_full_pipeline.py            ← Full generate_article() (skipped if no keys)
+│       ├── test_process_isolation.py        ← Verifies distinct PIDs per agent
+│       └── test_ipc_pipeline.py             ← IPC round-trip with real queues + mock agents
 ├── config/
 │   ├── setup.json
 │   ├── rate_limits.json
@@ -329,53 +372,48 @@ HW3/
 ├── docs/
 │   ├── PRD.md
 │   ├── PLAN.md
-│   ├── TODO.md
-│   ├── PRD_crewai_agents.md
-│   ├── PRD_latex_pipeline.md
-│   ├── PRD_api_gatekeeper.md
-│   ├── PRD_bibliography.md
-│   ├── PRD_bidi.md
-│   ├── PRD_graph_generation.md
-│   ├── PRD_cost_tracker.md
-│   ├── PRD_research_tools.md
-│   └── prompts_book.md
-├── data/                                 ← Static assets (cover image, etc.)
-├── results/                              ← Generated output (gitignored)
-├── assets/                               ← Article figures
-├── .env-example                          ← API key template (commit this)
-├── .env                                  ← Real API keys (DO NOT commit)
+│   └── TODO.md
+├── skills/                                  ← Per-agent SKILL.md files
+├── data/
+├── results/                                 ← Generated output (gitignored)
+├── assets/
+├── .env-example
 ├── pyproject.toml
-├── uv.lock
-└── README.md
+└── uv.lock
 ```
 
 ---
 
 ## Running Tests
 
-### Unit Tests
-
-Unit tests use mocked API calls — no real API keys required:
+### Unit Tests (no API keys required)
 
 ```powershell
 uv run pytest tests/unit/ -v
 ```
 
-### Integration Tests
-
-Integration tests require MiKTeX and compile real LaTeX:
+### Process-Specific Unit Tests
 
 ```powershell
-uv run pytest tests/integration/ -v
+# Test process isolation, IPC, Gatekeeper, Watchdog — all mocked
+uv run pytest tests/unit/test_services/test_watchdog.py -v
+uv run pytest tests/unit/test_services/test_gatekeeper_router.py -v
+uv run pytest tests/unit/test_shared/test_process_runner.py -v
 ```
 
-### Full Test Suite with Coverage
+### Integration Tests (API keys required — auto-skipped if absent)
+
+```powershell
+uv run pytest tests/integration/ -v --no-cov
+```
+
+### Full Suite with Coverage
 
 ```powershell
 uv run pytest tests/ --cov=src --cov-report=term-missing
 ```
 
-Target: **≥ 85% coverage** across all source modules.
+Target: **≥ 85% coverage**, **zero ruff violations**.
 
 ### Linting
 
@@ -383,161 +421,66 @@ Target: **≥ 85% coverage** across all source modules.
 uv run ruff check src/ tests/
 ```
 
-Target: **zero violations**.
-
 ---
 
 ## Evaluation Criteria Checklist
 
-Per Project.md §5, the following criteria are verified before submission:
-
 | Criterion | How to Verify |
 |-----------|--------------|
-| All links and citations clickable in PDF | Open `results/article.pdf`; click each `[N]` citation and TOC entry |
-| BiDi text direction correct throughout | Open PDF; Hebrew chapter text reads right-to-left without corruption |
-| No table overflows page margins | Inspect all tables in PDF; no content cut at page edge |
-| All formulas compiled as LaTeX math | Inspect PDF; no formula appears as plain text (`sigma`, `integral`, etc.) |
-
----
-
-## Architecture Overview
-
-The system follows a **layered SDK architecture**:
-
-```
-CLI (main.py)
-    └── ArticleGeneratorSDK
-            ├── CrewService          ← orchestrates 6 agents via CrewAI
-            │     ├── ResearcherAgent  [SerperDevTool]
-            │     ├── WriterAgent      []
-            │     ├── EditorAgent      []
-            │     ├── GraphGeneratorAgent []
-            │     ├── LaTeXFormatterAgent []
-            │     └── BiDiSpecialistAgent []
-            ├── LaTeXCompiler        ← 4-pass lualatex + biber
-            ├── GraphRunner          ← subprocess graph execution
-            ├── CostTracker          ← token & USD cost analysis
-            └── ApiGatekeeper        ← rate limiting, queue, retry, logging
-                    └── [all external API calls pass through here]
-```
-
-All external API calls (LLM + Serper) are routed through `ApiGatekeeper`, which enforces rate limits, queues on overflow, retries on transient failures, and logs every call as a `CallRecord` for cost analysis.
-
-For full architecture details, see `docs/PLAN.md`.
-
----
-
-## Configuration Guide
-
-### Switching LLM Provider
-
-The system supports **Claude** (Anthropic) and **Gemini** (Google) via a single `.env` toggle:
-
-```
-# Use Claude (default)
-ACTIVE_LLM=claude
-LLM_API_KEY=your_anthropic_key
-
-# Use Gemini
-ACTIVE_LLM=gemini
-GEMINI_API_KEY=your_gemini_key
-```
-
-Default models are defined in `src/article_generator/constants.py`:
-- Claude: `claude-sonnet-4-6`
-- Gemini: `gemini/gemini-2.0-flash`
-
-The active models can also be adjusted in `config/setup.json` under `agents.claude_model` and `agents.gemini_model`.
-
-### Adjusting Rate Limits
-
-If you hit API rate limit errors, lower the limits in `config/rate_limits.json`:
-```json
-"default": { "requests_per_minute": 10 }
-```
-
-### Setting a Cost Budget Alert
-
-In `config/setup.json`:
-```json
-"cost": { "budget_alert_usd": 0.25 }
-```
-
-Or at runtime:
-```powershell
-uv run python src/main.py --topic "..." --budget 0.25
-```
-
-A warning is printed if the run exceeds the budget. The run is not stopped — the alert is informational.
-
-### Selecting LaTeX Engine
-
-Both LuaLaTeX and XeLaTeX are supported. LuaLaTeX is the default:
-```json
-"latex": { "engine": "lualatex" }
-```
-
-To use XeLaTeX:
-```json
-"latex": { "engine": "xelatex" }
-```
-
-> `pdflatex` is NOT supported — it cannot handle Hebrew BiDi text.
+| Each agent runs in an isolated OS process | Run `test_process_isolation.py`; confirm 6 distinct PIDs |
+| IPC messages validated by GatekeeperRouter | Run `test_gatekeeper_router.py`; malformed messages raise error |
+| Watchdog terminates timed-out agents | Run `test_watchdog.py`; hung process terminated within timeout |
+| All links and citations clickable in PDF | Open `results/article.pdf`; click each citation and TOC entry |
+| BiDi text direction correct | Hebrew text reads right-to-left without corruption |
+| No table overflows page margins | All tables visible within page bounds |
+| All formulas compiled as LaTeX math | No formula appears as plain text (`sigma`, `integral`, etc.) |
 
 ---
 
 ## Troubleshooting
 
 ### `SERPER_API_KEY environment variable not set`
-Ensure `.env` exists and contains `SERPER_API_KEY=your_key`. Run `uv run python src/main.py` from the project root so `.env` is loaded.
+Ensure `.env` exists at the project root and contains `SERPER_API_KEY=...`. Run from the project root directory.
+
+### `AgentTimeoutError: ResearcherAgent exceeded timeout`
+The researcher agent took longer than `AGENT_TIMEOUT_SECONDS["Senior Academic Researcher"]`. Increase the timeout in `constants.py` or check your network/API key.
+
+### `GatekeeperValidationError: empty content from WriterAgent`
+The writer produced no output — usually an LLM API error. Check `LLM_API_KEY`/`GEMINI_API_KEY` and your API quota.
+
+### Agent process died unexpectedly (`status="error"`)
+Check the console for the traceback from inside the subprocess. Common causes: missing API key inside the subprocess environment, serialisation error, out-of-memory.
 
 ### `lualatex: command not found`
-MiKTeX is not in your PATH. Open a new PowerShell window after MiKTeX installation, or add MiKTeX's `bin` directory to your PATH manually.
+MiKTeX is not in PATH. Open a new terminal after installation, or add MiKTeX `bin/` to your PATH.
 
 ### `FontNotFoundError: Hebrew font 'FrankRuhlCLM' not found`
-Open MiKTeX Console → Packages → search `frankruhlclm` → Install. Then retry.
-
-### `biber: command not found`
-In MiKTeX Console, check that biber is installed: Packages → search `biber` → Install.
-
-### Compilation fails at Pass 2 (biber)
-Check `results/article.log` for citation key errors. Common causes:
-- A `\cite{key}` in `.tex` with no matching entry in `references.bib`
-- Duplicate citation keys in `references.bib`
+MiKTeX Console → Packages → search `frankruhlclm` → Install.
 
 ### PDF is fewer than 15 pages
-The LLM may have generated a shorter article. Increase `article.target_pages` in `config/setup.json` and re-run, or adjust agent prompts in `src/article_generator/services/tasks/task_definitions.py`.
-
-### High API cost
-Switch to a cheaper model: `--model claude-haiku-3-5`. The `cost_report.json` shows the cross-model comparison so you can see how much you would save.
+Increase `article.target_pages` in `config/setup.json` or adjust agent prompts in `services/tasks/task_definitions.py`.
 
 ---
 
 ## Dependencies
 
-Core dependencies (managed by `uv` via `pyproject.toml`):
-
 | Package | Purpose |
 |---------|---------|
 | `crewai` | Multi-agent orchestration framework |
-| `crewai-tools` | SerperDevTool and other built-in tools |
-| `anthropic` | Anthropic LLM API client |
+| `crewai[google-genai]` | Gemini LLM support via litellm |
+| `crewai-tools` | SerperDevTool, FileWriterTool, FileReadTool |
+| `anthropic` | Anthropic API client |
 | `matplotlib` | Programmatic graph generation |
-| `python-dotenv` | Load `.env` file into environment |
+| `python-dotenv` | Load `.env` into environment |
+| `multiprocessing` | OS-level process isolation *(stdlib — no install needed)* |
 
-Development dependencies:
-
-| Package | Purpose |
-|---------|---------|
-| `pytest` | Test runner |
-| `pytest-cov` | Coverage reporting |
-| `ruff` | Linting and formatting |
+Dev dependencies: `pytest`, `pytest-cov`, `ruff`.
 
 ---
 
 ## License
 
-This project is submitted as academic coursework for the MSC AI Agents course. Not licensed for commercial use.
+Academic coursework — MSC AI Agents Course, HW3. Not licensed for commercial use.
 
 ---
 

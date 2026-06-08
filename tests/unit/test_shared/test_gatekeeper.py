@@ -17,14 +17,14 @@ from article_generator.shared.gatekeeper_models import (
 # ---------------------------------------------------------------------------
 
 def make_limits(**overrides) -> ServiceLimits:
-    defaults = dict(
-        requests_per_minute=60,
-        requests_per_hour=1000,
-        concurrent_max=5,
-        retry_after_seconds=1,
-        max_retries=2,
-        max_queue_depth=10,
-    )
+    defaults = {
+        "requests_per_minute": 60,
+        "requests_per_hour": 1000,
+        "concurrent_max": 5,
+        "retry_after_seconds": 1,
+        "max_retries": 2,
+        "max_queue_depth": 10,
+    }
     defaults.update(overrides)
     return ServiceLimits(**defaults)
 

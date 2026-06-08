@@ -52,6 +52,21 @@ SETUP_CONFIG_VERSION = "1.00"
 RATE_LIMITS_CONFIG_VERSION = "1.00"
 MODEL_PRICING_CONFIG_VERSION = "1.00"
 
+# Multi-process IPC
+WATCHDOG_POLL_INTERVAL_SECONDS: float = 1.0
+IPC_QUEUE_TIMEOUT_SECONDS: float = 5.0
+DEFAULT_AGENT_TIMEOUT_SECONDS: int = 300
+
+# Per-agent timeouts (seconds) — keyed by agent role name
+AGENT_TIMEOUT_SECONDS: dict[str, int] = {
+    "researcher": 300,       # LLM calls + SerperDevTool searches
+    "writer": 300,           # Full article generation; most token-intensive
+    "editor": 180,           # Review/QC pass
+    "graph_generator": 120,  # Code generation + subprocess execution
+    "latex_formatter": 180,  # Markdown → .tex conversion
+    "bidi_specialist": 120,  # BiDi validation and correction
+}
+
 # LLM providers
 LLM_PROVIDER_CLAUDE = "claude"
 LLM_PROVIDER_GEMINI = "gemini"

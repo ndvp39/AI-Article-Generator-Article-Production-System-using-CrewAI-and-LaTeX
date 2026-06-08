@@ -110,6 +110,68 @@
 
 ---
 
+## Phase 3.5 — Multi-Process Architecture Overhaul (Milestone M3.5) ✓ COMPLETE
+
+> **Goal:** Every CrewAI agent runs as an isolated OS process. A GatekeeperRouter validates and routes all inter-agent messages. A Watchdog monitors process health and enforces timeouts. All existing behaviour is preserved.
+> **Exit Criteria (VERIFIED 2026-06-09):** ✓ 255 tests pass (`tests/unit/` + `tests/integration/test_process_isolation.py` + `tests/integration/test_ipc_pipeline.py`); ✓ 88% coverage (≥ 85%); ✓ zero ruff violations; ✓ 6 distinct PIDs confirmed by `test_process_isolation.py`; ✓ no agent can hang silently — Watchdog enforces per-agent timeouts; ✓ end-to-end IPC routing verified by `test_ipc_pipeline.py`.
+> **Blocking:** ~~Must be completed before Phase 5 work resumes.~~ **Phase 5 is now unblocked.**
+
+### Step 1 — Documentation (no code until all docs approved)
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-C01 | Update `README.md` — reflect multi-process architecture, new env vars, revised usage | `HIGH` | `[x]` | Developer | Architecture diagram updated; new components (GatekeeperRouter, Watchdog, ProcessOrchestrator) documented; setup/run instructions accurate |
+| T-C02 | Update `docs/PRD.md` — add multi-process, IPC, Gatekeeper, and Watchdog requirements | `HIGH` | `[x]` | Developer | New functional requirements section; non-functional requirements (isolation, fault tolerance, timeout); acceptance criteria updated |
+| T-C03 | Update `docs/PLAN.md` — replace single-process architecture with multi-process design; add IPC, Gatekeeper, Watchdog to C4 diagrams and class diagrams | `HIGH` | `[x]` | Developer | C4 container diagram updated; new class interfaces for `AgentProcessRunner`, `GatekeeperRouter`, `Watchdog`, `ProcessOrchestrator`; sequence diagram shows process spawn → IPC flow |
+
+### Step 2 — IPC Models & Shared Infrastructure
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-C04 | Implement `shared/ipc_models.py` — `AgentMessage` and `AgentStatus` dataclasses | `HIGH` | `[x]` | Developer | `AgentMessage`: sender, recipient, content, topic, message_id (UUID), timestamp, message_type (`"input"\|"output"\|"error"`); `AgentStatus`: agent_name, pid, status (`"running"\|"done"\|"error"\|"timeout"`), started_at, finished_at; both fully typed |
+| T-C05 | Update `constants.py` — add per-agent timeout constants and process-related constants | `MED` | `[x]` | Developer | `AGENT_TIMEOUT_SECONDS` dict keyed by agent role; `WATCHDOG_POLL_INTERVAL_SECONDS`; `IPC_QUEUE_TIMEOUT_SECONDS` |
+| T-C06 | Write unit tests for `ipc_models.py` (`tests/unit/test_shared/test_ipc_models.py`) | `MED` | `[x]` | Developer | Tests: `AgentMessage` fields set correctly; `message_id` is unique UUID per instance; `AgentStatus` transitions valid |
+
+### Step 3 — AgentProcessRunner
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-C07 | Implement `shared/process_runner.py` — `AgentProcessRunner` | `HIGH` | `[x]` | Developer | Wraps a single agent builder in a `multiprocessing.Process`; agent is *created inside* the subprocess (never pickled); exposes `start()`, `join(timeout)`, `terminate()`, `is_alive()`, `pid`; subprocess reads from `in_queue`, writes `AgentMessage` to `out_queue`; handles exceptions inside subprocess by writing an error `AgentMessage` to `out_queue` |
+| T-C08 | Write unit tests for `AgentProcessRunner` (`tests/unit/test_shared/test_process_runner.py`) | `HIGH` | `[x]` | Developer | Tests: process starts and gets distinct PID; process writes output to queue; process can be terminated; error inside subprocess produces error message on queue; all agent calls mocked |
+
+### Step 4 — GatekeeperRouter
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-C09 | Implement `services/gatekeeper_router.py` — `GatekeeperRouter` | `HIGH` | `[x]` | Developer | Runs as a daemon thread; reads `AgentMessage` from each agent's output queue; validates: non-empty content, correct sender/recipient pair per pipeline order, valid `message_type`; routes valid messages to next agent's input queue; raises `GatekeeperValidationError` on schema violation; logs every hop with sender→recipient and content length |
+| T-C10 | Write unit tests for `GatekeeperRouter` (`tests/unit/test_services/test_gatekeeper_router.py`) | `HIGH` | `[x]` | Developer | Tests: valid message routed to correct queue; empty content raises `GatekeeperValidationError`; wrong sender/recipient pair raises error; all 6 pipeline hops tested; routing order matches sequential pipeline |
+
+### Step 5 — Watchdog
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-C11 | Implement `services/watchdog.py` — `Watchdog` | `HIGH` | `[x]` | Developer | Runs as a daemon thread; polls `process.is_alive()` every `WATCHDOG_POLL_INTERVAL_SECONDS`; on unexpected death: records `AgentStatus(status="error")`; on timeout exceeded: calls `process.terminate()`, records `AgentStatus(status="timeout")`, raises `AgentTimeoutError`; exposes `get_status(agent_name) -> AgentStatus` and `all_healthy() -> bool` |
+| T-C12 | Write unit tests for `Watchdog` (`tests/unit/test_services/test_watchdog.py`) | `HIGH` | `[x]` | Developer | Tests: healthy process passes check; crashed process detected and status set to `"error"`; process exceeding timeout is terminated and raises `AgentTimeoutError`; `all_healthy()` returns False after any failure; all process interactions mocked |
+
+### Step 6 — ProcessOrchestrator & CrewService Refactor
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-C13 | Implement `services/process_orchestrator.py` — `ProcessOrchestrator` | `HIGH` | `[x]` | Developer | Creates 6 input/output `multiprocessing.Queue` pairs; spawns 6 `AgentProcessRunner`s; starts `GatekeeperRouter` and `Watchdog`; injects initial `AgentMessage(topic=topic)` to researcher's input queue; blocks on final output from bidi specialist's output queue; shuts down all processes cleanly on success or error; returns `ArticleResult` |
+| T-C14 | Refactor `services/crew_service.py` — delegate to `ProcessOrchestrator` instead of `crewai.Crew` | `HIGH` | `[x]` | Developer | `run_pipeline()` delegates entirely to `ProcessOrchestrator.run(topic)`; no direct `Crew` or `kickoff()` calls remain; `_build_agents()` retained as agent config factory (not instantiating Agents directly) |
+| T-C15 | Update unit tests for `CrewService` (`tests/unit/test_services/test_crew_service.py`) | `HIGH` | `[x]` | Developer | Tests updated to reflect `ProcessOrchestrator` delegation; all process/queue calls mocked |
+| T-C16 | Write unit tests for `ProcessOrchestrator` (`tests/unit/test_services/test_process_orchestrator.py`) | `HIGH` | `[x]` | Developer | Tests: correct number of processes spawned; initial message injected to researcher queue; final output collected from bidi queue; clean shutdown on success; all processes terminated on error; Watchdog and GatekeeperRouter started |
+
+### Step 7 — Integration & Verification
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-C17 | Integration test: process isolation verified (`tests/integration/test_process_isolation.py`) | `HIGH` | `[x]` | Developer | Each agent process has a distinct PID different from the main process; 6 distinct PIDs confirmed; skipped if API keys absent |
+| T-C18 | Integration test: IPC message passing end-to-end (`tests/integration/test_ipc_pipeline.py`) | `HIGH` | `[x]` | Developer | A stub message injected at researcher input emerges correctly formatted at bidi output; all LLM/Serper calls mocked with real queues and real processes |
+| T-C19 | Update `docs/TODO.md` — mark all T-C tasks complete, update phase exit criteria | `MED` | `[x]` | Developer | All T-C tasks marked `[x]`; phase exit criteria verified |
+
+---
+
 ## Phase 4 — Content Generation Pipeline (Milestone M4)
 
 > **Goal:** Full Markdown article generated by the agent crew, validated by the Reviewer agent.  

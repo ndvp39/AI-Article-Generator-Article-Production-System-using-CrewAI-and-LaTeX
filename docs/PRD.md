@@ -1,8 +1,8 @@
 # PRD.md — Product Requirements Document
 # AI Article Generator: Academic Article Production System using CrewAI and LaTeX
 
-**Version:** 1.00  
-**Date:** 2026-06-07  
+**Version:** 1.10 — Multi-Process Architecture  
+**Date:** 2026-06-08  
 **Course:** AI Agents — MSC Course, HW3  
 **Lecturer:** Dr. Yoram Segal  
 
@@ -16,8 +16,10 @@
 ### 1.2 Project Description
 An automated multi-agent system built with **CrewAI** that orchestrates specialized AI agents to collaboratively research, write, and produce a professional academic article (~15 pages). The final output is a professionally typeset **PDF document** generated via LaTeX (LuaLaTeX/XeLaTeX with MiKTeX), fully supporting Hebrew–English bidirectional (BiDi) text.
 
+**Architecture:** Each of the 6 CrewAI agents runs as an **isolated OS process** (`multiprocessing.Process`). Agents communicate exclusively through typed IPC message queues (`multiprocessing.Queue`). A **GatekeeperRouter** validates and routes every inter-agent message. A **Watchdog** monitors process health and enforces per-agent timeouts, ensuring no process hangs or crashes silently.
+
 The system follows a two-phase workflow:
-1. **Content Phase** — agents generate and validate article content in Markdown.
+1. **Content Phase** — agents generate and validate article content in Markdown, each in its own process.
 2. **Typesetting Phase** — a dedicated LaTeX agent converts the finalized Markdown to `.tex` files and compiles to PDF.
 
 ### 1.3 Context
@@ -55,6 +57,10 @@ This system solves the problem by:
 
 | Goal | Metric | Target |
 |------|--------|--------|
+| Process isolation | Each agent runs in a distinct PID | 6 distinct PIDs confirmed by tests |
+| Fault detection | Watchdog detects crashed process | Within `WATCHDOG_POLL_INTERVAL_SECONDS` |
+| Timeout enforcement | Watchdog terminates hung process | Within configured `AGENT_TIMEOUT_SECONDS` |
+| IPC reliability | All inter-agent messages pass GatekeeperRouter validation | 100% of messages validated |
 | Document length | Pages in compiled PDF | ≥ 15 pages |
 | Visual elements — image | Embedded image present | ≥ 1 |
 | Visual elements — graph | Python-generated figure compiled | ≥ 1 |
@@ -69,6 +75,10 @@ This system solves the problem by:
 | Cross-model cost comparison | Same token usage projected across ≥ 3 LLM providers | ≥ 3 providers in report |
 
 ### 2.2 KPIs
+- **Process isolation:** All 6 agents confirmed running in distinct PIDs, verified by automated test.
+- **Crash detection latency:** Watchdog detects unexpected process death within one poll interval (default ≤ 2 s).
+- **Timeout enforcement:** Hung agent process terminated within `AGENT_TIMEOUT_SECONDS[role]` + one poll interval.
+- **IPC validation coverage:** 100% of inter-agent messages pass through GatekeeperRouter validation.
 - **Pipeline completion time:** ≤ 30 minutes end-to-end
 - **LaTeX compilation passes:** ≤ 4 sequential passes (per guidelines)
 - **API call success rate:** ≥ 95% (with retry/queue)
@@ -79,7 +89,11 @@ This system solves the problem by:
 - **Budget alert:** Warning fired when projected total cost exceeds configured `alert_threshold_usd`
 
 ### 2.3 Acceptance Criteria
-1. Compiled PDF is ≥ 15 pages.
+1. Each of the 6 agents runs in a distinct OS process with a PID different from the main process — confirmed by `tests/integration/test_process_isolation.py`.
+2. `GatekeeperRouter` rejects messages with empty content or invalid sender/recipient pairs, raising `GatekeeperValidationError`.
+3. `Watchdog` detects a hung (non-responsive) agent process and terminates it within the configured `AGENT_TIMEOUT_SECONDS`, raising `AgentTimeoutError`.
+4. `Watchdog` detects an unexpectedly crashed agent process and records `AgentStatus(status="error")` within one poll interval.
+5. Compiled PDF is ≥ 15 pages.
 2. Cover sheet present, containing: topic, author name, date, course name, lecturer name.
 3. Table of contents auto-generated, functional, and all entries are clickable hyperlinks.
 4. All chapters properly formatted with headers (chapter title) and footers (page number).
@@ -100,17 +114,18 @@ This system solves the problem by:
 
 ### 3.1 Core Features
 
-**FR-01: Multi-Agent Pipeline (CrewAI)**
-- System MUST orchestrate a crew of specialized CrewAI agents in a **Sequential or Hierarchical** workflow configuration.
-- The output of each agent MUST serve as the `context` input for the next agent in the pipeline.
+**FR-01: Multi-Agent Pipeline (CrewAI + Multi-Process)**
+- System MUST orchestrate 6 specialized CrewAI agents in a sequential pipeline.
+- Each agent MUST run as an **isolated OS process** (`multiprocessing.Process`) — see FR-12.
+- Context/results MUST flow between agents exclusively through typed IPC message queues — see FR-13.
 - The following **4 agent roles are mandatory** (as defined in Project.md §2):
-  1. **Researcher Agent** — conducts research and gathers accurate data and key facts. MUST be connected to an internet search tool (e.g., `SerperDevTool` for Google Search). This connection is **mandatory**.
+  1. **Researcher Agent** — conducts research and gathers accurate data and key facts. MUST be connected to an internet search tool (`SerperDevTool`). This connection is **mandatory**.
   2. **Writer Agent** — converts raw research materials into a structured article. MUST NOT have access to any internet search tool; receives context exclusively from the Researcher agent.
   3. **Reviewer / Quality Control Agent** — checks factual accuracy and improves text clarity without changing original meaning.
   4. **LaTeX Generation Agent** — converts the final approved text into valid LaTeX code ready for compilation.
-- The system SHOULD additionally include: Graph Generator Agent and BiDi Specialist Agent for enhanced output quality.
+- The system additionally includes: Graph Generator Agent and BiDi Specialist Agent.
 - Each agent MUST have a clearly defined `role`, `goal`, `backstory`, and assigned `tools`.
-- Pipeline MUST be driven by a `Crew` object with explicit `Task` definitions.
+- Pipeline orchestration MUST be driven by `ProcessOrchestrator` with 6 `AgentProcessRunner` instances.
 
 **FR-02: Content Generation in Markdown**
 - System MUST first generate all article content in Markdown format.
@@ -148,6 +163,35 @@ This system solves the problem by:
 - Compilation MUST be performed ≥ 4 sequential passes to ensure all cross-references and citations resolve.
 - Output PDF MUST be saved to `results/`.
 - Any LaTeX compilation error MUST be reported and the pipeline MUST NOT silently fail.
+
+**FR-12: Process Isolation**
+- Each of the 6 CrewAI agents MUST run as an isolated OS process using `multiprocessing.Process`.
+- The CrewAI `Agent` object MUST be instantiated **inside** the subprocess — never pickled and passed across process boundaries.
+- Each agent process MUST have a distinct PID different from the main process PID.
+- Agent processes MUST be spawned fresh on every `run_pipeline()` call — no process reuse between runs.
+- Failure in one agent process MUST NOT directly crash or corrupt other agent processes.
+
+**FR-13: IPC Message Passing**
+- All inter-agent communication MUST use typed `AgentMessage` objects placed on `multiprocessing.Queue` instances.
+- `AgentMessage` MUST contain: `sender` (str), `recipient` (str), `content` (str), `topic` (str), `message_id` (UUID str), `timestamp` (float), `message_type` (`"input" | "output" | "error"`).
+- `AgentStatus` MUST contain: `agent_name` (str), `pid` (int), `status` (`"running" | "done" | "error" | "timeout"`), `started_at` (float), `finished_at` (float | None).
+- No shared memory, global variables, or direct method calls MAY be used to pass context between agent processes.
+- Each agent process reads from one input `Queue` and writes to one output `Queue`.
+
+**FR-14: GatekeeperRouter**
+- A `GatekeeperRouter` daemon thread MUST intercept every `AgentMessage` before it reaches the next agent.
+- GatekeeperRouter MUST validate: non-empty `content`, valid `sender`/`recipient` adjacent pair per pipeline order, recognised `message_type`.
+- GatekeeperRouter MUST raise `GatekeeperValidationError` on any schema or routing violation.
+- GatekeeperRouter MUST log every validated message hop: sender → recipient, content length, message_id.
+- GatekeeperRouter MUST route valid messages to the correct next agent's input `Queue`.
+
+**FR-15: Watchdog**
+- A `Watchdog` daemon thread MUST monitor all 6 agent `AgentProcessRunner` instances throughout pipeline execution.
+- Watchdog MUST poll `process.is_alive()` every `WATCHDOG_POLL_INTERVAL_SECONDS` (default: 2 s, configurable in `constants.py`).
+- On **unexpected crash** — process dead before completion: Watchdog MUST record `AgentStatus(status="error")` and signal pipeline failure.
+- On **timeout** — agent alive but exceeds `AGENT_TIMEOUT_SECONDS[role]`: Watchdog MUST call `process.terminate()`, record `AgentStatus(status="timeout")`, and raise `AgentTimeoutError`.
+- Watchdog MUST expose `get_status(agent_name) -> AgentStatus` and `all_healthy() -> bool`.
+- All 6 agent processes MUST be terminated and joined on pipeline completion or failure (no zombie processes).
 
 **FR-09: API Gatekeeper**
 - ALL LLM API calls MUST go through the centralized `ApiGatekeeper`.
@@ -194,6 +238,17 @@ This system solves the problem by:
 - Package manager: `uv` only (`pip` FORBIDDEN).
 - MiKTeX (with LuaLaTeX and biber) must be installed separately.
 
+**NFR-07: Process Fault Tolerance**
+- An agent process crash MUST NOT silently pass — Watchdog MUST detect it within one poll interval.
+- A timed-out agent process MUST be terminated before the pipeline blocks indefinitely.
+- All 6 agent processes MUST be cleaned up (terminated + joined) on both successful completion and error exit.
+- `ProcessOrchestrator` MUST catch all `AgentTimeoutError` and subprocess errors and propagate them as structured `ArticleResult` failures — never silent.
+
+**NFR-08: IPC Reliability**
+- All inter-agent messages MUST be typed `AgentMessage` instances — no raw strings or untyped objects on queues.
+- `GatekeeperRouter` MUST validate every message before routing; zero messages may bypass validation.
+- `multiprocessing.Queue` operations MUST use explicit timeouts (`IPC_QUEUE_TIMEOUT_SECONDS`) — no indefinite blocking queue gets.
+
 **NFR-06: Cost Observability**
 - Every LLM API call MUST be logged with input tokens, output tokens, model name, agent name, and ISO timestamp.
 - Cost report generation MUST complete within 1 second of pipeline completion.
@@ -216,6 +271,10 @@ This system solves the problem by:
 | US-08 | Developer | See a token and USD cost breakdown per agent after each run | I can identify which agents are most expensive and optimize them |
 | US-09 | Researcher | Compare the cost of running the same pipeline across different LLM providers | I can choose the most cost-effective model for my budget |
 | US-10 | Developer | Receive a budget alert when projected cost exceeds a configured threshold | I can prevent unexpected API charges |
+| US-11 | Developer | Each agent runs in its own OS process | A crash in one agent cannot corrupt the state of another |
+| US-12 | Developer | The Watchdog automatically terminates hung agents | The pipeline never blocks indefinitely on a non-responsive agent |
+| US-13 | Developer | All inter-agent messages are validated by the GatekeeperRouter | Malformed or empty agent outputs are caught before they propagate downstream |
+| US-14 | Developer | Verify process isolation via an automated test | I can confirm that 6 distinct PIDs are produced without running the full LLM pipeline |
 
 ---
 
@@ -245,6 +304,23 @@ This system solves the problem by:
 2. Compilation subprocess returns non-zero exit code.
 3. System captures the LaTeX log, raises a structured error, and reports it.
 4. Developer corrects the formatter and re-runs.
+
+### Scenario 5 — Watchdog Timeout Recovery
+1. The WriterAgent process stalls (LLM call hangs, no response within timeout).
+2. `Watchdog` polls `process.is_alive()` — returns `True`, but elapsed time exceeds `AGENT_TIMEOUT_SECONDS["Academic Article Writer"]`.
+3. `Watchdog` calls `process.terminate()` on the writer process.
+4. `Watchdog` records `AgentStatus(status="timeout", agent_name="Academic Article Writer")`.
+5. `Watchdog` raises `AgentTimeoutError`.
+6. `ProcessOrchestrator` catches the error, terminates all remaining processes, and returns `ArticleResult(success=False)`.
+7. Developer receives a clear error message: `AgentTimeoutError: Academic Article Writer exceeded timeout`.
+
+### Scenario 6 — GatekeeperRouter Rejects Malformed Message
+1. ResearcherAgent process completes but produces empty output (API error returned empty string).
+2. ResearcherAgent writes `AgentMessage(content="", message_type="output")` to its output queue.
+3. `GatekeeperRouter` reads the message and validates `content` — empty string detected.
+4. `GatekeeperRouter` raises `GatekeeperValidationError("Empty content from Senior Academic Researcher")`.
+5. `ProcessOrchestrator` catches the error, terminates all processes, and returns `ArticleResult(success=False)`.
+6. Developer receives a clear error message pointing to the researcher's empty output.
 
 ### Scenario 4 — Cost Report & Budget Alert
 1. Pipeline completes (success or partial failure).
@@ -281,6 +357,7 @@ This system solves the problem by:
 | LuaLaTeX / XeLaTeX | bundled with MiKTeX | BiDi-capable LaTeX engine |
 | biber | bundled with MiKTeX | Bibliography compilation |
 | Serper API | external service | Google Search API for Researcher agent (requires `SERPER_API_KEY`) |
+| multiprocessing | stdlib (Python ≥ 3.10) | OS-level process isolation for agent processes — no installation required |
 
 ### 6.3 Constraints
 - LaTeX engine: **LuaLaTeX or XeLaTeX only** (pdflatex does not support Hebrew/BiDi).
@@ -290,6 +367,9 @@ This system solves the problem by:
 - Test coverage: **≥ 85%** measured by `pytest --cov`.
 - Secrets: **never in source code** — only via `.env`. Required secrets: `LLM_API_KEY`, `SERPER_API_KEY`.
 - **Writer Agent tool isolation:** Writer agent MUST NOT be assigned `SerperDevTool` or any other internet search tool.
+- **Process isolation:** Every agent MUST run in its own `multiprocessing.Process`; in-memory single-process agent execution is NOT permitted.
+- **IPC only:** Inter-agent context MUST flow exclusively through `multiprocessing.Queue` + `AgentMessage`; shared memory or direct function calls between agents are NOT permitted.
+- **No zombie processes:** All spawned agent processes MUST be terminated and joined before `run_pipeline()` returns.
 
 ### 6.4 Out of Scope
 - GUI interface.
@@ -308,6 +388,7 @@ This system solves the problem by:
 | M1 | Documentation Complete | PRD.md, PLAN.md, TODO.md, dedicated PRDs (incl. PRD_research_tools.md) approved | Phase 1 |
 | M2 | Project Skeleton | `pyproject.toml`, `uv.lock`, directory structure, `constants.py`, `.env-example`, `config/model_pricing.json` | Phase 2 |
 | M3 | Core Agent Definitions | All CrewAI agents defined with roles/goals/tools; unit tests pass | Phase 3 |
+| M3.5 | Multi-Process Architecture | Each agent runs as isolated OS process; GatekeeperRouter, Watchdog, ProcessOrchestrator implemented; process isolation + IPC tests pass | Phase 3.5 |
 | M4 | Content Pipeline | Full Markdown article generated by crew; Editor validated output | Phase 4 |
 | M5 | Visual Elements | Python graph generated; image embedded; table and formula in Markdown | Phase 5 |
 | M6 | LaTeX Pipeline | `.tex` file generated; compilation produces valid PDF | Phase 6 |

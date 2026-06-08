@@ -4,9 +4,10 @@ import random
 import time
 import uuid
 from collections import deque
+from collections.abc import Callable
 from datetime import datetime, timezone
 from threading import Lock, Semaphore
-from typing import Any, Callable
+from typing import Any
 
 from article_generator.constants import TRANSIENT_HTTP_CODES
 from article_generator.shared.config import ServiceLimits

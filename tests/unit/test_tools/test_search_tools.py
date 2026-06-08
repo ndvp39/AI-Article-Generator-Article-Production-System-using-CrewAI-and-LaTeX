@@ -10,7 +10,6 @@ from article_generator.services.tools.search_tools import (
     validate_tool_isolation,
 )
 
-
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------

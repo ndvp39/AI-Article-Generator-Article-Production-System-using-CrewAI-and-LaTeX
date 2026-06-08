@@ -19,7 +19,7 @@ class ToolIsolationError(Exception):
 def build_search_tool() -> SerperDevTool:
     api_key = os.environ.get("SERPER_API_KEY")
     if not api_key:
-        raise EnvironmentError(
+        raise OSError(
             "SERPER_API_KEY environment variable not set. "
             "Add it to your .env file."
         )

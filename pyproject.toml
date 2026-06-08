@@ -69,5 +69,10 @@ ignore = [
     "B008",  # do not perform function calls in default arguments
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "N806",   # PascalCase mock variables (MockOrch, MockRunner …) are an accepted test pattern
+]
+
 [tool.ruff.lint.isort]
 known-first-party = ["article_generator"]

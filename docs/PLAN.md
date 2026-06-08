@@ -1,8 +1,8 @@
 # PLAN.md — Architecture & Design Document
 # AI Article Generator: Academic Article Production System
 
-**Version:** 1.00  
-**Date:** 2026-06-07  
+**Version:** 1.10  
+**Date:** 2026-06-08  
 **Course:** AI Agents — MSC Course, HW3  
 **Lecturer:** Dr. Yoram Segal  
 
@@ -12,33 +12,45 @@
 
 The system follows a **layered SDK architecture** with a single entry point. All business logic is accessible only through the SDK layer. External consumers (CLI, tests) never call internal services directly.
 
+Each of the six CrewAI agents runs as an **isolated OS process** (`multiprocessing.Process`). Inter-agent communication is exclusively via typed `AgentMessage` objects passed through `multiprocessing.Queue` pairs. A `GatekeeperRouter` daemon thread validates every message and routes it to the next agent's input queue. A `Watchdog` daemon thread monitors process health and enforces per-agent timeouts.
+
 ```
-┌─────────────────────────────────────────┐
-│        External Consumers               │
-│     CLI (main.py) / Tests               │
-└──────────────────┬──────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────┐
-│         ArticleGeneratorSDK             │  ← Single entry point for ALL logic
-│              sdk/sdk.py                 │
-└──────────────────┬──────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────┐
-│            Domain Services              │
-│  CrewService │ LaTeXCompiler │          │
-│  GraphRunner │ FileManager   │          │
-│  CostTracker │               │          │
-└──────────────────┬──────────────────────┘
-                   │
-                   ▼
-┌─────────────────────────────────────────┐
-│           Infrastructure                │
-│  ApiGatekeeper │ ConfigManager │        │
-│  LLM API       │ File System   │        │
-│  LaTeX Engine  │               │        │
-└─────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│                   External Consumers                         │
+│               CLI (main.py) / Tests                          │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│                 ArticleGeneratorSDK                          │  ← Single entry point
+│                     sdk/sdk.py                               │
+└───────────────────────────┬──────────────────────────────────┘
+                            │
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│                  ProcessOrchestrator                         │
+│  ┌──────────────────────────────────────────────────────┐    │
+│  │  GatekeeperRouter (daemon thread)                    │    │
+│  │    validates AgentMessage schema; routes Q_out→Q_in  │    │
+│  ├──────────────────────────────────────────────────────┤    │
+│  │  Watchdog (daemon thread)                            │    │
+│  │    polls is_alive(); enforces timeouts               │    │
+│  └──────────────────────────────────────────────────────┘    │
+│                                                              │
+│  Q_in → [OS Process: ResearcherAgent]  → Q_out              │
+│  Q_in → [OS Process: WriterAgent]      → Q_out              │
+│  Q_in → [OS Process: EditorAgent]      → Q_out              │
+│  Q_in → [OS Process: GraphGenAgent]    → Q_out              │
+│  Q_in → [OS Process: LaTeXFmtAgent]   → Q_out              │
+│  Q_in → [OS Process: BiDiSpecAgent]   → Q_out              │
+└──────────────────────────────────────────────────────────────┘
+                            │
+                            ▼
+┌──────────────────────────────────────────────────────────────┐
+│                     Infrastructure                           │
+│  ApiGatekeeper │ ConfigManager │ LaTeXCompiler               │
+│  LLM API       │ File System   │ LaTeX Engine                │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -79,7 +91,10 @@ C4Container
 
     Container(main, "main.py", "Python", "CLI entry point — initializes SDK and triggers pipeline")
     Container(sdk, "ArticleGeneratorSDK", "Python / sdk/sdk.py", "Single entry point for all business logic")
-    Container(crew, "CrewService", "Python / CrewAI", "Orchestrates 6 specialized agents and their tasks")
+    Container(crew, "CrewService", "Python / CrewAI", "Delegates to ProcessOrchestrator; builds agent configs and tasks")
+    Container(orchestrator, "ProcessOrchestrator", "Python / multiprocessing", "Spawns 6 agent OS processes; manages 6 queue pairs; starts GatekeeperRouter + Watchdog")
+    Container(gk_router, "GatekeeperRouter", "Python daemon thread", "Validates AgentMessage schema; routes Q_out → Q_in for each pipeline step; logs every hop")
+    Container(watchdog, "Watchdog", "Python daemon thread", "Polls process.is_alive(); detects crashes (status=error); enforces per-agent timeouts; raises AgentTimeoutError")
     Container(gatekeeper, "ApiGatekeeper", "Python", "Rate limiting, queuing, retries for all LLM API calls")
     Container(compiler, "LaTeXCompiler", "Python + subprocess", "Generates .tex/.bib files and runs 4-pass LuaLaTeX compilation")
     Container(graph, "GraphRunner", "Python + matplotlib", "Executes graph-generation code, saves figures to assets/")
@@ -92,11 +107,15 @@ C4Container
     Rel(user, main, "uv run python src/main.py")
     Rel(main, sdk, "calls generate_article()")
     Rel(sdk, crew, "delegates to CrewService")
+    Rel(crew, orchestrator, "creates ProcessOrchestrator and calls run()")
+    Rel(orchestrator, gk_router, "starts as daemon thread")
+    Rel(orchestrator, watchdog, "starts as daemon thread")
+    Rel(orchestrator, gatekeeper, "each agent process uses ApiGatekeeper")
+    Rel(gk_router, gatekeeper, "validates messages via gatekeeper schema")
     Rel(sdk, compiler, "delegates to LaTeXCompiler")
     Rel(sdk, graph, "delegates to GraphRunner")
     Rel(sdk, config, "reads configuration")
     Rel(sdk, cost, "delegates to CostTracker")
-    Rel(crew, gatekeeper, "all LLM calls via gatekeeper")
     Rel(gatekeeper, llm, "HTTPS API calls")
     Rel(compiler, latex_engine, "subprocess calls")
     Rel(cost, gatekeeper, "reads call_records")
@@ -104,30 +123,38 @@ C4Container
 
 ---
 
-### 2.3 Level 3 — Component Diagram (CrewService)
+### 2.3 Level 3 — Component Diagram (ProcessOrchestrator)
 
 ```mermaid
 C4Component
-    title Component Diagram — CrewService
+    title Component Diagram — ProcessOrchestrator
 
-    Container_Boundary(crew_svc, "CrewService") {
-        Component(crew_runner, "CrewRunner", "crewai.Crew", "Assembles agents + tasks, kicks off Sequential or Hierarchical pipeline; each agent output is context for the next")
-        Component(researcher, "ResearcherAgent", "crewai.Agent + SerperDevTool", "MANDATORY: uses SerperDevTool to perform live Google searches; gathers facts and key data; produces structured research outline")
-        Component(writer, "WriterAgent", "crewai.Agent", "Receives Researcher context; writes full Markdown content; has NO internet search tool assigned")
-        Component(editor, "EditorAgent", "crewai.Agent", "Reviewer/QC: checks factual accuracy and improves clarity without changing original meaning")
-        Component(graph_agent, "GraphGeneratorAgent", "crewai.Agent + CodeInterpreterTool", "Produces and self-verifies Python matplotlib code via CodeInterpreterTool; iterates until graph file is successfully produced")
-        Component(latex_agent, "LaTeXFormatterAgent", "crewai.Agent + FileWriterTool", "Converts validated Markdown to full .tex; writes results/article.tex directly via FileWriterTool")
-        Component(bidi_agent, "BiDiSpecialistAgent", "crewai.Agent + FileReadTool + FileWriterTool", "Reads .tex via FileReadTool; validates BiDi; writes corrected .tex via FileWriterTool")
+    Container_Boundary(proc_orch, "ProcessOrchestrator") {
+        Component(gk_router, "GatekeeperRouter", "Python daemon thread", "Validates AgentMessage schema on each queue hop; raises GatekeeperValidationError on bad messages; logs every route step")
+        Component(watchdog, "Watchdog", "Python daemon thread", "Polls process.is_alive() every second; marks status=error on crash; terminates + raises AgentTimeoutError on timeout; exposes get_status() and all_healthy()")
+
+        Component(runner1, "AgentProcessRunner: Researcher", "multiprocessing.Process", "Wraps ResearcherAgent in isolated OS process; agent built INSIDE subprocess; exposes start/join/terminate/is_alive/pid")
+        Component(runner2, "AgentProcessRunner: Writer", "multiprocessing.Process", "Wraps WriterAgent in isolated OS process")
+        Component(runner3, "AgentProcessRunner: Editor", "multiprocessing.Process", "Wraps EditorAgent in isolated OS process")
+        Component(runner4, "AgentProcessRunner: GraphGen", "multiprocessing.Process", "Wraps GraphGeneratorAgent in isolated OS process")
+        Component(runner5, "AgentProcessRunner: LaTeXFmt", "multiprocessing.Process", "Wraps LaTeXFormatterAgent in isolated OS process")
+        Component(runner6, "AgentProcessRunner: BiDiSpec", "multiprocessing.Process", "Wraps BiDiSpecialistAgent in isolated OS process")
+
         Component(task_defs, "TaskDefinitions", "Python", "Defines all Task objects with expected_output and agent assignment")
     }
 
-    Rel(crew_runner, researcher, "Task 1: internet search + outline")
-    Rel(crew_runner, writer, "Task 2: write chapters (context from Task 1)")
-    Rel(crew_runner, editor, "Task 3: QC review (context from Task 2)")
-    Rel(crew_runner, graph_agent, "Task 4: graph code")
-    Rel(crew_runner, latex_agent, "Task 5: .tex generation")
-    Rel(crew_runner, bidi_agent, "Task 6: BiDi validation")
-    Rel(crew_runner, task_defs, "loads task definitions")
+    Rel(gk_router, runner1, "routes Q_out[0] → Q_in[1]")
+    Rel(gk_router, runner2, "routes Q_out[1] → Q_in[2]")
+    Rel(gk_router, runner3, "routes Q_out[2] → Q_in[3]")
+    Rel(gk_router, runner4, "routes Q_out[3] → Q_in[4]")
+    Rel(gk_router, runner5, "routes Q_out[4] → Q_in[5]")
+    Rel(watchdog, runner1, "monitors is_alive(); enforces timeout")
+    Rel(watchdog, runner2, "monitors is_alive(); enforces timeout")
+    Rel(watchdog, runner3, "monitors is_alive(); enforces timeout")
+    Rel(watchdog, runner4, "monitors is_alive(); enforces timeout")
+    Rel(watchdog, runner5, "monitors is_alive(); enforces timeout")
+    Rel(watchdog, runner6, "monitors is_alive(); enforces timeout")
+    Rel(runner1, task_defs, "loads task definition at subprocess start")
 ```
 
 ---
@@ -210,6 +237,148 @@ class CostTracker:
         ...
 ```
 
+#### `AgentMessage` — IPC Message Dataclass
+```python
+@dataclass
+class AgentMessage:
+    """Typed IPC message passed between agent processes via multiprocessing.Queue."""
+
+    sender: str           # Agent name that produced this message
+    recipient: str        # Agent name that should consume this message
+    content: str          # Serialized task output (markdown / code / tex)
+    topic: str            # Article topic propagated through the pipeline
+    message_id: str       # UUID4 assigned at creation
+    timestamp: float      # time.time() at creation
+    message_type: str     # "task_output" | "error" | "control"
+```
+
+#### `AgentStatus` — Process Health Dataclass
+```python
+@dataclass
+class AgentStatus:
+    """Snapshot of an agent process's health, set and read by Watchdog."""
+
+    pid: int | None       # OS process ID (None before start)
+    status: str           # "running" | "done" | "error" | "timeout"
+    started_at: float     # time.time() when process was started
+    finished_at: float | None  # time.time() when process exited (None if still running)
+```
+
+#### `AgentProcessRunner` — Process Wrapper
+```python
+class AgentProcessRunner:
+    """Wraps a single CrewAI agent builder in an isolated OS process."""
+
+    def __init__(
+        self,
+        agent_cls: type,          # Agent builder class (e.g. ResearcherAgent)
+        input_queue: Queue,       # Receives AgentMessage from previous step
+        output_queue: Queue,      # Sends AgentMessage to next step
+        timeout: int = 300,       # Seconds before Watchdog terminates this process
+    ) -> None: ...
+
+    def start(self) -> None:
+        """Spawn the OS process; agent is instantiated INSIDE the subprocess."""
+        ...
+
+    def join(self, timeout: float | None = None) -> None:
+        """Wait for process to finish (blocks calling thread)."""
+        ...
+
+    def terminate(self) -> None:
+        """Send SIGTERM to the subprocess; used by Watchdog on timeout."""
+        ...
+
+    def is_alive(self) -> bool:
+        """Return True if the subprocess is still running."""
+        ...
+
+    @property
+    def pid(self) -> int | None:
+        """OS process ID, or None if not yet started."""
+        ...
+```
+
+#### `GatekeeperRouter` — IPC Message Validator & Router
+```python
+class GatekeeperRouter:
+    """Daemon thread that validates and routes AgentMessage objects between queues."""
+
+    def __init__(
+        self,
+        pipeline: list[tuple[Queue, Queue]],  # [(Q_in, Q_out)] for each agent
+    ) -> None: ...
+
+    def start(self) -> None:
+        """Start the daemon thread; runs until stop() is called."""
+        ...
+
+    def stop(self) -> None:
+        """Signal the daemon thread to exit cleanly."""
+        ...
+
+    def _validate(self, msg: AgentMessage) -> None:
+        """Raise GatekeeperValidationError if msg fails schema checks."""
+        ...
+
+    def _route(self, msg: AgentMessage, dest_queue: Queue) -> None:
+        """Put validated message onto destination queue; log the hop."""
+        ...
+```
+
+#### `Watchdog` — Process Health Monitor
+```python
+class Watchdog:
+    """Daemon thread that monitors agent processes and enforces timeouts."""
+
+    def __init__(
+        self,
+        runners: list[AgentProcessRunner],
+        poll_interval: float = 1.0,
+    ) -> None: ...
+
+    def start(self) -> None:
+        """Start the daemon thread."""
+        ...
+
+    def stop(self) -> None:
+        """Signal the daemon thread to exit cleanly."""
+        ...
+
+    def get_status(self) -> list[AgentStatus]:
+        """Return current AgentStatus snapshot for all runners."""
+        ...
+
+    def all_healthy(self) -> bool:
+        """Return True if no runner has status 'error' or 'timeout'."""
+        ...
+```
+
+#### `ProcessOrchestrator` — Top-Level Process Manager
+```python
+class ProcessOrchestrator:
+    """Creates agent processes, manages IPC queues, and coordinates the full pipeline."""
+
+    def __init__(self, config: ArticleConfig, llm: LLM) -> None: ...
+
+    def run(self, topic: str) -> ArticleResult:
+        """
+        Full pipeline:
+        1. Create 6 (Q_in, Q_out) queue pairs.
+        2. Spawn 6 AgentProcessRunners.
+        3. Start GatekeeperRouter + Watchdog as daemon threads.
+        4. Inject initial AgentMessage into Researcher's Q_in.
+        5. Collect final AgentMessage from BiDiSpecialist's Q_out.
+        6. Clean shutdown: join all processes, stop router + watchdog.
+        7. Return ArticleResult.
+        """
+        ...
+
+    def _shutdown(self) -> None:
+        """Terminate all processes cleanly; stop daemon threads."""
+        ...
+```
+
 #### `LaTeXCompiler` — Compilation Interface
 ```python
 class LaTeXCompiler:
@@ -241,7 +410,10 @@ project-root/
 │   │   ├── sdk/
 │   │   │   └── sdk.py                     # ArticleGeneratorSDK
 │   │   ├── services/
-│   │   │   ├── crew_service.py            # CrewAI Crew orchestration
+│   │   │   ├── crew_service.py            # CrewAI Crew orchestration (delegates to ProcessOrchestrator)
+│   │   │   ├── process_orchestrator.py    # ProcessOrchestrator: spawns 6 agent processes + manages queues
+│   │   │   ├── gatekeeper_router.py       # GatekeeperRouter: validates & routes AgentMessage queue hops
+│   │   │   ├── watchdog.py                # Watchdog: monitors process health, enforces timeouts
 │   │   │   ├── latex_compiler.py          # .tex/.bib generation + compilation
 │   │   │   ├── graph_runner.py            # Python graph execution
 │   │   │   ├── file_manager.py            # File I/O operations
@@ -263,6 +435,8 @@ project-root/
 │   │   └── shared/
 │   │       ├── gatekeeper.py              # ApiGatekeeper
 │   │       ├── config.py                  # ConfigManager
+│   │       ├── ipc_models.py              # AgentMessage and AgentStatus dataclasses
+│   │       ├── process_runner.py          # AgentProcessRunner: one agent per OS process
 │   │       └── version.py                 # Version tracking (1.00)
 │   └── main.py                            # CLI entry point
 ├── tests/
@@ -271,6 +445,9 @@ project-root/
 │   │   │   └── test_sdk.py
 │   │   ├── test_services/
 │   │   │   ├── test_crew_service.py
+│   │   │   ├── test_process_orchestrator.py
+│   │   │   ├── test_gatekeeper_router.py
+│   │   │   ├── test_watchdog.py
 │   │   │   ├── test_latex_compiler.py
 │   │   │   ├── test_graph_runner.py
 │   │   │   ├── test_file_manager.py
@@ -286,10 +463,14 @@ project-root/
 │   │   │   └── test_search_tools.py
 │   │   └── test_shared/
 │   │       ├── test_gatekeeper.py
-│   │       └── test_config.py
+│   │       ├── test_config.py
+│   │       ├── test_ipc_models.py
+│   │       └── test_process_runner.py
 │   ├── integration/
 │   │   ├── test_pipeline.py
-│   │   └── test_latex_compilation.py
+│   │   ├── test_latex_compilation.py
+│   │   ├── test_process_isolation.py      # Verifies each agent runs in a separate OS process
+│   │   └── test_ipc_message_passing.py    # End-to-end IPC: AgentMessage flows through all 6 queues
 │   └── conftest.py                        # Shared fixtures
 ├── skills/                                # Active CrewAI skill folders (injected via skills= param)
 │   ├── researcher/
@@ -344,78 +525,107 @@ sequenceDiagram
     participant Main as main.py
     participant SDK as ArticleGeneratorSDK
     participant Crew as CrewService
+    participant Orch as ProcessOrchestrator
+    participant GKR as GatekeeperRouter
+    participant WD as Watchdog
+    participant P1 as Process: Researcher
+    participant P2 as Process: Writer
+    participant P3 as Process: Editor
+    participant P4 as Process: GraphGen
+    participant P5 as Process: LaTeXFmt
+    participant P6 as Process: BiDiSpec
     participant Gate as ApiGatekeeper
     participant LLM as LLM API
-    participant Graph as GraphRunner
     participant Comp as LaTeXCompiler
-    participant LaTeX as LuaLaTeX Engine
     participant Cost as CostTracker
 
     User->>Main: uv run python src/main.py
-    Main->>SDK: generate_article()
-    SDK->>Crew: run_pipeline(config)
+    Main->>SDK: generate_article(topic)
+    SDK->>Crew: run(topic, config)
+    Crew->>Orch: run(topic)
 
-    Crew->>Gate: execute(researcher_call)
-    Note over Gate,LLM: Researcher uses SerperDevTool for live internet search
-    Gate->>LLM: API call (rate checked)
-    LLM-->>Gate: search queries
-    Gate-->>Crew: search queries
-    Crew->>Crew: SerperDevTool → Google Search (HTTPS)
-    Crew-->>Crew: search results
-    Crew->>Gate: execute(researcher_synthesis_call)
-    Gate->>LLM: API call with search results as context
-    LLM-->>Gate: structured research outline
-    Gate-->>Crew: outline (passed as context to Writer)
+    Note over Orch: Create 6 (Q_in, Q_out) queue pairs
+    Orch->>P1: spawn AgentProcessRunner (ResearcherAgent)
+    Orch->>P2: spawn AgentProcessRunner (WriterAgent)
+    Orch->>P3: spawn AgentProcessRunner (EditorAgent)
+    Orch->>P4: spawn AgentProcessRunner (GraphGeneratorAgent)
+    Orch->>P5: spawn AgentProcessRunner (LaTeXFormatterAgent)
+    Orch->>P6: spawn AgentProcessRunner (BiDiSpecialistAgent)
+    Orch->>GKR: start daemon thread
+    Orch->>WD: start daemon thread
 
-    Crew->>Gate: execute(writer_call)
-    Note over Crew,LLM: Writer has NO internet search tool
-    Gate->>LLM: API call (Researcher outline as context)
+    Orch->>P1: inject AgentMessage(topic) → Q_in[0]
+
+    Note over P1,LLM: Each process builds its own agent instance internally
+    P1->>Gate: execute(researcher_llm_call)
+    Gate->>LLM: HTTPS API call (rate checked)
+    LLM-->>Gate: research outline
+    Gate-->>P1: outline
+    P1->>P1: SerperDevTool → Google Search
+    P1-->>GKR: AgentMessage(outline) → Q_out[0]
+
+    GKR->>GKR: validate AgentMessage schema
+    GKR->>P2: route → Q_in[1]
+
+    P2->>Gate: execute(writer_llm_call)
+    Gate->>LLM: API call
     LLM-->>Gate: Markdown chapters
-    Gate-->>Crew: markdown content
+    Gate-->>P2: markdown
+    P2-->>GKR: AgentMessage(markdown) → Q_out[1]
+    GKR->>P3: route → Q_in[2]
 
-    Crew->>Gate: execute(editor_call)
+    P3->>Gate: execute(editor_llm_call)
     Gate->>LLM: API call
     LLM-->>Gate: refined Markdown
-    Gate-->>Crew: validated content
+    Gate-->>P3: validated content
+    P3-->>GKR: AgentMessage(refined_md) → Q_out[2]
+    GKR->>P4: route → Q_in[3]
 
-    Crew->>Gate: execute(graph_agent_call)
+    P4->>Gate: execute(graph_llm_call)
     Gate->>LLM: API call
     LLM-->>Gate: Python graph code
-    Gate-->>Crew: graph code
+    Gate-->>P4: graph code + figure
+    P4-->>GKR: AgentMessage(graph_result) → Q_out[3]
+    GKR->>P5: route → Q_in[4]
 
-    Crew->>Graph: run_graph_code(code)
-    Graph-->>Crew: figure saved to assets/
-
-    Crew->>Gate: execute(latex_formatter_call)
+    P5->>Gate: execute(latex_llm_call)
     Gate->>LLM: API call
     LLM-->>Gate: .tex content
-    Gate-->>Crew: tex content
+    Gate-->>P5: tex
+    P5-->>GKR: AgentMessage(tex) → Q_out[4]
+    GKR->>P6: route → Q_in[5]
 
-    Crew->>Gate: execute(bidi_specialist_call)
+    P6->>Gate: execute(bidi_llm_call)
     Gate->>LLM: API call
     LLM-->>Gate: validated .tex
-    Gate-->>Crew: final .tex + .bib
+    Gate-->>P6: final .tex + .bib
+    P6-->>Orch: AgentMessage(final_tex_bib) → Q_out[5]
 
-    Crew-->>SDK: ArticleResult(tex, bib, assets)
+    Note over WD: Watchdog polling throughout — terminates any process that exceeds timeout
+    Orch->>WD: stop()
+    Orch->>GKR: stop()
+    Orch->>P1: join()
+    Orch->>P2: join()
+    Orch->>P3: join()
+    Orch->>P4: join()
+    Orch->>P5: join()
+    Orch->>P6: join()
+
+    Orch-->>Crew: ArticleResult(markdown, tex, bib)
+    Crew-->>SDK: ArticleResult
     SDK->>Comp: compile_pdf(tex_path, bib_path)
 
     loop 4 compilation passes
-        Comp->>LaTeX: lualatex / biber subprocess
-        LaTeX-->>Comp: pass result
+        Comp->>Comp: lualatex / biber subprocess
     end
 
     Comp-->>SDK: CompilationResult(pdf_path)
-    Note over Gate,Cost: ApiGatekeeper holds all CallRecords with token counts
     SDK->>Cost: generate_report()
     Cost->>Gate: get_call_records()
     Gate-->>Cost: list[CallRecord]
     Cost-->>SDK: CostReport(tokens, per_agent, comparison)
-    SDK->>Cost: check_budget_alert(threshold_usd)
-    Cost-->>SDK: alert_fired: bool
-    SDK->>Cost: save_report(report, "results/")
-    Cost-->>SDK: "results/cost_report_<timestamp>.json"
     SDK-->>Main: ArticleResult (with CostReport)
-    Main-->>User: PDF + cost_report_<timestamp>.json saved to results/
+    Main-->>User: PDF + cost_report saved to results/
 ```
 
 ---
@@ -430,7 +640,7 @@ classDiagram
         -latex_compiler: LaTeXCompiler
         -graph_runner: GraphRunner
         -cost_tracker: CostTracker
-        +generate_article() ArticleResult
+        +generate_article(topic) ArticleResult
         +compile_pdf(tex_path) CompilationResult
         +get_pipeline_status() PipelineStatus
         +get_cost_report() CostReport
@@ -439,10 +649,67 @@ classDiagram
 
     class CrewService {
         -gatekeeper: ApiGatekeeper
-        -agents: list~BaseAgent~
-        -tasks: list~Task~
-        +run_pipeline(config) ArticleResult
-        -_build_crew() Crew
+        -orchestrator: ProcessOrchestrator
+        +run(topic, config) ArticleResult
+    }
+
+    class ProcessOrchestrator {
+        -config: ArticleConfig
+        -llm: LLM
+        -runners: list~AgentProcessRunner~
+        -gk_router: GatekeeperRouter
+        -watchdog: Watchdog
+        +run(topic) ArticleResult
+        -_shutdown() None
+    }
+
+    class AgentProcessRunner {
+        -agent_cls: type
+        -input_queue: Queue
+        -output_queue: Queue
+        -timeout: int
+        -_process: Process
+        +start() None
+        +join(timeout) None
+        +terminate() None
+        +is_alive() bool
+        +pid: int~property~
+    }
+
+    class GatekeeperRouter {
+        -pipeline: list~tuple~
+        -_thread: Thread
+        +start() None
+        +stop() None
+        -_validate(msg) None
+        -_route(msg, queue) None
+    }
+
+    class Watchdog {
+        -runners: list~AgentProcessRunner~
+        -poll_interval: float
+        -_thread: Thread
+        +start() None
+        +stop() None
+        +get_status() list~AgentStatus~
+        +all_healthy() bool
+    }
+
+    class AgentMessage {
+        +sender: str
+        +recipient: str
+        +content: str
+        +topic: str
+        +message_id: str
+        +timestamp: float
+        +message_type: str
+    }
+
+    class AgentStatus {
+        +pid: int
+        +status: str
+        +started_at: float
+        +finished_at: float
     }
 
     class ApiGatekeeper {
@@ -494,7 +761,6 @@ classDiagram
 
     class BaseAgent {
         <<abstract>>
-        #gatekeeper: ApiGatekeeper
         #role: str
         #goal: str
         #backstory: str
@@ -532,8 +798,15 @@ classDiagram
     ArticleGeneratorSDK --> ConfigManager
     ArticleGeneratorSDK --> CostTracker
     CostTracker --> ApiGatekeeper
-    CrewService --> ApiGatekeeper
-    CrewService --> BaseAgent
+    CrewService --> ProcessOrchestrator
+    ProcessOrchestrator --> AgentProcessRunner
+    ProcessOrchestrator --> GatekeeperRouter
+    ProcessOrchestrator --> Watchdog
+    AgentProcessRunner --> AgentMessage : IPC via Queue
+    GatekeeperRouter --> AgentMessage : validates & routes
+    Watchdog --> AgentProcessRunner : monitors
+    Watchdog --> AgentStatus : produces
+    AgentProcessRunner --> BaseAgent : instantiates inside subprocess
     BaseAgent <|-- ResearcherAgent
     BaseAgent <|-- WriterAgent
     BaseAgent <|-- EditorAgent
@@ -552,7 +825,14 @@ graph TD
         subgraph Python_Env["Python 3.10+ Environment (uv)"]
             main["main.py (CLI)"]
             sdk["ArticleGeneratorSDK"]
-            crew["CrewService + 6 Agents"]
+            crew["CrewService"]
+            orch["ProcessOrchestrator\n+ GatekeeperRouter\n+ Watchdog"]
+            p1["OS Process: ResearcherAgent"]
+            p2["OS Process: WriterAgent"]
+            p3["OS Process: EditorAgent"]
+            p4["OS Process: GraphGenAgent"]
+            p5["OS Process: LaTeXFmtAgent"]
+            p6["OS Process: BiDiSpecAgent"]
             gate["ApiGatekeeper"]
             compiler["LaTeXCompiler"]
         end
@@ -574,16 +854,28 @@ graph TD
 
     main --> sdk
     sdk --> crew
-    crew --> gate
+    crew --> orch
+    orch -->|spawns| p1
+    orch -->|spawns| p2
+    orch -->|spawns| p3
+    orch -->|spawns| p4
+    orch -->|spawns| p5
+    orch -->|spawns| p6
+    p1 --> gate
+    p2 --> gate
+    p3 --> gate
+    p4 --> gate
+    p5 --> gate
+    p6 --> gate
     gate -->|HTTPS| llm_api
-    crew -->|SerperDevTool HTTPS| serper_api
+    p1 -->|SerperDevTool HTTPS| serper_api
     sdk --> compiler
     compiler -->|subprocess| lualatex
     compiler -->|subprocess| biber
     sdk -->|reads| config_dir
     sdk -->|reads| env_file
     compiler -->|writes| results_dir
-    crew -->|writes graphs| assets_dir
+    p4 -->|writes graphs| assets_dir
 ```
 
 ---
@@ -666,6 +958,20 @@ graph TD
 | **Rationale** | A centralized `llm_factory.build_llm()` function reads `ACTIVE_LLM` from `.env`, selects the correct API key (`LLM_API_KEY` for Claude, `GEMINI_API_KEY` for Gemini), and returns a `crewai.LLM` instance. All 6 agents receive this instance at construction — no agent-level changes required |
 | **Alternatives considered** | Hard-coded Claude — rejected; locks users to one vendor and one API key. Per-agent provider config — rejected; duplicates configuration and risks agents using different providers inconsistently |
 | **Trade-offs** | Requires `crewai[google-genai]` extra dependency for Gemini; only one provider is active per run |
+
+---
+
+### ADR-008: Multi-Process Agent Isolation via `multiprocessing`
+
+| Field | Detail |
+|-------|--------|
+| **Status** | Accepted |
+| **Decision** | Each of the six CrewAI agents runs as an isolated OS process (`multiprocessing.Process`); agents communicate exclusively via typed `AgentMessage` objects passed through `multiprocessing.Queue` pairs |
+| **Context** | The initial architecture ran all agents inside a single process via `crewai.Crew`. This gave no fault isolation: a crash or memory leak in one agent could terminate the entire pipeline. The course project mandates robustness and process-level isolation |
+| **Rationale** | OS-level isolation ensures that a crash in one agent process cannot corrupt another agent's memory or state. Queue-based IPC provides a well-defined, inspectable contract between agents. The `GatekeeperRouter` validates every message at each hop, catching schema violations early. The `Watchdog` enforces timeouts and reports crashes, enabling graceful error handling instead of silent hangs |
+| **Key constraint** | `crewai.LLM` and tool objects are **not picklable** and therefore cannot be passed across a process boundary via `Queue`. Each `AgentProcessRunner` passes only serializable configuration (agent builder class reference + topic string); the agent is instantiated **entirely inside the subprocess** |
+| **Alternatives considered** | Thread-level isolation — rejected; Python GIL limits true parallelism and threads share memory, so a bug in one agent can still corrupt global state. `concurrent.futures.ProcessPoolExecutor` — rejected; requires picklable callables, incompatible with crewai agent objects. Keeping single-process — rejected; violates the architectural requirement |
+| **Trade-offs** | Inter-process overhead (~50ms process spawn) is negligible compared to LLM API latency (seconds per call). Debugging across process boundaries is harder; mitigated by structured logging in `GatekeeperRouter` |
 
 ---
 
