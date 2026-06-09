@@ -180,10 +180,10 @@
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
 | T-041 | Implement `services/file_manager.py` — `FileManager` | `MED` | `[x]` | Developer | Read/write Markdown, JSON, config; all paths relative; no absolute paths in code |
-| T-042 | Implement `sdk/sdk.py` — `ArticleGeneratorSDK` skeleton | `HIGH` | `[x]` | Developer | All public methods defined; delegates to services; no business logic in SDK itself |
+| T-042 | Implement `sdk/sdk.py` — `ArticleGeneratorSDK` skeleton | `HIGH` | `[x]` | Developer | All public methods defined; delegates to services; no business logic in SDK itself — `compile_pdf(tex_path, bib_path)` wired to `LaTeXCompiler().compile()` (corrected post-Phase 6) |
 | T-043 | Implement `src/main.py` — CLI entry point | `HIGH` | `[x]` | Developer | Loads config, instantiates SDK, calls `generate_article()`, prints summary; handles errors gracefully |
 | T-044 | Write unit tests for `FileManager` (`tests/unit/test_services/test_file_manager.py`) | `MED` | `[x]` | Developer | Tests: read/write Markdown, JSON; error on missing file; no real FS calls (mocked) |
-| T-045 | Write unit tests for `ArticleGeneratorSDK` (`tests/unit/test_sdk/test_sdk.py`) | `HIGH` | `[x]` | Developer | Tests: correct delegation to services; method signatures match PLAN.md §6.1 |
+| T-045 | Write unit tests for `ArticleGeneratorSDK` (`tests/unit/test_sdk/test_sdk.py`) | `HIGH` | `[x]` | Developer | Tests: correct delegation to services; method signatures match PLAN.md §6.1 — updated to verify `compile_pdf()` delegates to `LaTeXCompiler` (corrected post-Phase 6) |
 | T-046 | End-to-end test: Researcher performs live internet search | `HIGH` | `[x]` | Developer | Running with a real `SERPER_API_KEY` returns search results; outline includes factual data |
 | T-047 | End-to-end test: Full Markdown article generated | `HIGH` | `[x]` | Developer | Output Markdown contains: abstract, introduction, ≥ 4 chapters, conclusion, bibliography list |
 
@@ -213,13 +213,13 @@
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
 | T-054 | Implement `services/latex_compiler.py` — `LaTeXCompiler.generate_tex()` | `HIGH` | `[x]` | Developer | Converts Markdown to complete `.tex`; includes: title page, `\tableofcontents`, chapters, `fancyhdr`, `hyperref`, `polyglossia`/`babel` |
-| T-055 | Implement `LaTeXCompiler.generate_bib()` | `HIGH` | `[ ]` | Developer | Produces valid `.bib` file from reference list; all entries have required BibTeX fields |
-| T-056 | Implement `LaTeXCompiler.compile()` — 4-pass LuaLaTeX + biber | `HIGH` | `[ ]` | Developer | Runs: lualatex → biber → lualatex → lualatex; captures log; raises structured error on failure; returns `CompilationResult` |
-| T-057 | Write unit tests for `LaTeXCompiler` (`tests/unit/test_services/test_latex_compiler.py`) | `HIGH` | `[ ]` | Developer | Tests: valid `.tex` generates valid structure, `.bib` output format correct, compilation error captured; subprocess mocked |
-| T-058 | Integration test: compile sample `.tex` to PDF | `HIGH` | `[ ]` | Developer | Given a valid `.tex` + `.bib`, `compile()` produces `results/article.pdf` with zero errors |
-| T-059 | Verify compiled PDF has cover sheet with all required fields | `HIGH` | `[ ]` | Developer | PDF page 1 contains: topic, author, date, course, lecturer |
-| T-060 | Verify PDF table of contents is present and links are clickable | `HIGH` | `[ ]` | Developer | TOC entries present; clicking jumps to correct chapter |
-| T-061 | Verify tables in PDF do not overflow page margins | `HIGH` | `[ ]` | Developer | Visual inspection confirms all tables fit within margins; `\resizebox` or `tabularx` used where needed |
+| T-055 | Implement `LaTeXCompiler.generate_bib()` | `HIGH` | `[x]` | Developer | Produces valid `.bib` file from reference list; all entries have required BibTeX fields |
+| T-056 | Implement `LaTeXCompiler.compile()` — 4-pass LuaLaTeX + biber | `HIGH` | `[x]` | Developer | Runs: lualatex → biber → lualatex → lualatex; captures log; raises structured error on failure; returns `CompilationResult` |
+| T-057 | Write unit tests for `LaTeXCompiler` (`tests/unit/test_services/test_latex_compiler.py`) | `HIGH` | `[x]` | Developer | Tests: valid `.tex` generates valid structure, `.bib` output format correct, compilation error captured; subprocess mocked |
+| T-058 | Integration test: compile sample `.tex` to PDF | `HIGH` | `[x]` | Developer | Given a valid `.tex` + `.bib`, `compile()` produces `results/article.pdf` with zero errors |
+| T-059 | Verify compiled PDF has cover sheet with all required fields | `HIGH` | `[x]` | Developer | PDF page 1 contains: topic, author, date, course, lecturer |
+| T-060 | Verify PDF table of contents is present and links are clickable | `HIGH` | `[x]` | Developer | TOC entries present; clicking jumps to correct chapter |
+| T-061 | Verify tables in PDF do not overflow page margins | `HIGH` | `[x]` | Developer | Visual inspection confirms all tables fit within margins; `\resizebox` or `tabularx` used where needed |
 
 ---
 
@@ -325,11 +325,11 @@
 | 3 | M3 — Core Agents | T-025 to T-040 | 14 | 0 | 2 |
 | 4 | M4 — Content Pipeline | T-041 to T-047 | 0 | 0 | 7 |
 | 5 | M5 — Visual Elements | T-048 to T-053 | 6 | 0 | 0 |
-| 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 1 | 0 | 7 |
+| 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 4 | 0 | 4 |
 | 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 0 | 0 | 6 |
 | 8 | M8 pre — Cost Tracking | T-068 to T-073 | 0 | 0 | 6 |
 | 9 | M8 — Integration & QA | T-074 to T-087 | 0 | 0 | 14 |
-| **Total** | | **89 tasks** | **37** | **0** | **52** |
+| **Total** | | **89 tasks** | **40** | **0** | **49** |
 
 ---
 

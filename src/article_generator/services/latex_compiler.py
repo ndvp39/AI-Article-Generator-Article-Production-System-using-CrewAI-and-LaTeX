@@ -2,10 +2,21 @@ from __future__ import annotations
 
 import logging
 import re
+import subprocess
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from article_generator.constants import ARTICLE_TEX_FILE, ASSETS_DIR, RESULTS_DIR
+from article_generator.constants import (
+    ARTICLE_TEX_FILE,
+    ASSETS_DIR,
+    BIBER_EXECUTABLE,
+    BIBER_TIMEOUT_SECONDS,
+    LATEX_ENGINE,
+    LATEX_TIMEOUT_SECONDS,
+    REFERENCES_BIB_FILE,
+    RESULTS_DIR,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +30,36 @@ logger = logging.getLogger(__name__)
 class ArticlePaths:
     output_dir: Path = field(default_factory=lambda: RESULTS_DIR)
     assets_dir: Path = field(default_factory=lambda: ASSETS_DIR)
-    bib_filename: str = "references.bib"
+    bib_filename: str = REFERENCES_BIB_FILE
+
+
+@dataclass
+class Reference:
+    """One bibliographic reference for BibTeX output.
+
+    *entry_type* must be one of: article, book, inproceedings, misc.
+    *key* is the BibTeX cite key used in \\cite{key} commands.
+    Leave unused optional fields as empty strings (the default).
+    """
+
+    key: str
+    entry_type: str   # article | book | inproceedings | misc
+    author: str
+    title: str
+    year: str
+    # @article
+    journal: str = ""
+    volume: str = ""
+    # @inproceedings
+    booktitle: str = ""
+    # @book
+    publisher: str = ""
+    # shared optional
+    number: str = ""
+    pages: str = ""
+    url: str = ""
+    doi: str = ""
+    note: str = ""
 
 
 @dataclass
@@ -30,6 +70,19 @@ class ArticleConfig:
     course: str
     lecturer: str
     paths: ArticlePaths = field(default_factory=ArticlePaths)
+
+
+@dataclass
+class CompilationResult:
+    """Outcome of a 4-pass LuaLaTeX + biber compilation run."""
+
+    success: bool
+    passes_completed: int          # 0–4
+    pdf_path: Path | None
+    errors: list[str]              # lines starting with ! in the .log
+    warnings: list[str]            # Overfull \hbox, undefined citations, etc.
+    log_path: Path | None
+    duration_seconds: float = 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -46,7 +99,14 @@ class BibGenerationError(Exception):
 
 
 class CompilationError(Exception):
-    """Raised when a LaTeX compilation pass produces fatal errors."""
+    """Raised when a LaTeX compilation pass produces fatal errors.
+
+    *result* carries the partial CompilationResult built up to the failing pass.
+    """
+
+    def __init__(self, message: str, result: CompilationResult | None = None) -> None:
+        super().__init__(message)
+        self.result = result
 
 
 class CompilationTimeoutError(CompilationError):
@@ -82,6 +142,27 @@ _LATEX_ESCAPE_RE = re.compile(r"([%&_#\$])")
 # Required section keywords (lowercase); checked against headings
 _REQUIRED_SECTIONS = ("abstract", "introduction", "conclusion")
 
+# BibTeX required fields per entry type (PRD §4.2)
+_REQUIRED_BIB_FIELDS: dict[str, tuple[str, ...]] = {
+    "article":       ("author", "title", "journal", "year", "volume"),
+    "book":          ("author", "title", "publisher", "year"),
+    "inproceedings": ("author", "title", "booktitle", "year"),
+    "misc":          ("author", "title", "year", "url"),
+}
+
+# Canonical field output order for .bib entries
+_BIB_FIELD_ORDER = (
+    "author", "title", "journal", "booktitle", "publisher",
+    "year", "volume", "number", "pages", "url", "doi", "note",
+)
+
+# Substrings that identify non-fatal but tracked LaTeX log warnings (PRD §3.4)
+_WARNING_PATTERNS = (
+    r"Overfull \hbox",
+    "undefined on input line",      # catches Citation/Reference ... undefined
+    "Package hyperref Warning",
+)
+
 
 # ---------------------------------------------------------------------------
 # LaTeXCompiler
@@ -92,8 +173,8 @@ class LaTeXCompiler:
     """Produces a complete .tex source file from a Markdown article.
 
     T-054: generate_tex()   — Markdown → .tex with full preamble.
-    T-055: generate_bib()   — reference list → .bib file (stub).
-    T-056: compile()        — 4-pass LuaLaTeX + biber compilation (stub).
+    T-055: generate_bib()   — reference list → .bib file.
+    T-056: compile()        — 4-pass LuaLaTeX + biber compilation.
     """
 
     def __init__(
@@ -126,18 +207,205 @@ class LaTeXCompiler:
         return tex
 
     # ------------------------------------------------------------------
-    # T-055 stub: generate_bib (implemented in T-055)
+    # T-055  Public API: generate_bib
     # ------------------------------------------------------------------
 
-    def generate_bib(self, references: list, config: ArticleConfig) -> str:  # type: ignore[type-arg]
-        raise NotImplementedError("generate_bib() will be implemented in T-055")
+    def generate_bib(self, references: list[Reference], config: ArticleConfig) -> str:
+        """Produce a valid .bib file from *references* and write it to disk.
+
+        Raises:
+            BibGenerationError: if any reference is missing required fields for
+                                 its entry type, or has an unrecognised entry type.
+        """
+        for ref in references:
+            self._validate_reference(ref)
+
+        entries = [self._format_bib_entry(ref) for ref in references]
+        bib_content = (
+            "% Generated by LaTeXCompiler — do not edit manually\n\n"
+            + "\n\n".join(entries)
+            + ("\n" if entries else "")
+        )
+
+        output_path = Path(config.paths.output_dir) / config.paths.bib_filename
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text(bib_content, encoding="utf-8")
+        logger.info(
+            "LaTeXCompiler: wrote %s (%d entries, %d bytes)",
+            output_path, len(references), len(bib_content.encode()),
+        )
+        return bib_content
 
     # ------------------------------------------------------------------
-    # T-056 stub: compile (implemented in T-056)
+    # T-056  Public API: compile
     # ------------------------------------------------------------------
 
-    def compile(self, tex_path: str, bib_path: str) -> object:
-        raise NotImplementedError("compile() will be implemented in T-056")
+    def compile(self, tex_path: str, bib_path: str) -> CompilationResult:
+        """Run the 4-pass LuaLaTeX + biber pipeline and return a CompilationResult.
+
+        Pass sequence:
+          1. lualatex  — first parse; writes .aux / .toc
+          2. biber     — resolves citations; writes .bbl
+          3. lualatex  — reads .bbl; resolves citation back-references
+          4. lualatex  — resolves remaining cross-refs (TOC, hyperlinks)
+
+        Raises:
+            FileNotFoundError: *tex_path* does not exist.
+            CompilationError: any lualatex pass produces ! errors or exits non-zero.
+                              ``exc.result`` contains the partial CompilationResult.
+            CompilationTimeoutError: a subprocess exceeds its configured timeout.
+                                     Also a subclass of CompilationError.
+        """
+        tex = Path(tex_path)
+        if not tex.exists():
+            raise FileNotFoundError(f"tex file not found: {tex}")
+
+        work_dir  = tex.parent
+        stem      = tex.stem
+        log_path  = work_dir / f"{stem}.log"
+        pdf_path  = work_dir / f"{stem}.pdf"
+
+        result = CompilationResult(
+            success=False,
+            passes_completed=0,
+            pdf_path=None,
+            errors=[],
+            warnings=[],
+            log_path=None,
+            duration_seconds=0.0,
+        )
+        start = time.monotonic()
+        passes_done = 0
+
+        try:
+            self._run_lualatex_pass(tex, work_dir, result)
+            passes_done = 1
+            self._run_biber_pass(stem, work_dir, result)
+            passes_done = 2
+            self._run_lualatex_pass(tex, work_dir, result)
+            passes_done = 3
+            self._run_lualatex_pass(tex, work_dir, result)
+            passes_done = 4
+        except CompilationError as exc:
+            result.passes_completed  = passes_done
+            result.duration_seconds  = time.monotonic() - start
+            result.log_path          = log_path if log_path.exists() else None
+            exc.result = result
+            raise
+
+        result.passes_completed  = passes_done
+        result.success           = pdf_path.exists()
+        result.pdf_path          = pdf_path if pdf_path.exists() else None
+        result.log_path          = log_path if log_path.exists() else None
+        result.duration_seconds  = time.monotonic() - start
+        logger.info(
+            "LaTeXCompiler: compilation complete — %s, %d passes, %.1fs",
+            "OK" if result.success else "no PDF", passes_done, result.duration_seconds,
+        )
+        return result
+
+    # ------------------------------------------------------------------
+    # Compilation helpers
+    # ------------------------------------------------------------------
+
+    def _run_lualatex_pass(
+        self, tex: Path, work_dir: Path, result: CompilationResult
+    ) -> None:
+        log_path = work_dir / f"{tex.stem}.log"
+        try:
+            proc = subprocess.run(
+                [LATEX_ENGINE, "--interaction=nonstopmode", tex.name],
+                cwd=work_dir,
+                capture_output=True,
+                text=True,
+                timeout=LATEX_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise CompilationTimeoutError(
+                f"{LATEX_ENGINE} timed out after {LATEX_TIMEOUT_SECONDS}s"
+            ) from exc
+
+        errors   = self._read_log_errors(log_path)
+        warnings = self._read_log_warnings(log_path)
+        result.warnings.extend(warnings)
+
+        if proc.returncode != 0 or errors:
+            result.errors.extend(errors)
+            if not errors:
+                result.errors.append(
+                    f"{LATEX_ENGINE} exited with code {proc.returncode}"
+                )
+            raise CompilationError(
+                f"LuaLaTeX pass failed: {result.errors[0]}"
+            )
+
+    def _run_biber_pass(
+        self, stem: str, work_dir: Path, result: CompilationResult
+    ) -> None:
+        try:
+            proc = subprocess.run(
+                [BIBER_EXECUTABLE, stem],
+                cwd=work_dir,
+                capture_output=True,
+                text=True,
+                timeout=BIBER_TIMEOUT_SECONDS,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise CompilationTimeoutError(
+                f"biber timed out after {BIBER_TIMEOUT_SECONDS}s"
+            ) from exc
+
+        if proc.returncode != 0:
+            msg = (proc.stderr or proc.stdout or "biber failed").strip()[:300]
+            result.errors.append(msg)
+            raise CompilationError(f"biber pass failed: {msg}")
+
+    @staticmethod
+    def _read_log_errors(log_path: Path) -> list[str]:
+        if not log_path.exists():
+            return []
+        content = log_path.read_text(encoding="utf-8", errors="replace")
+        return [line for line in content.splitlines() if line.startswith("!")]
+
+    @staticmethod
+    def _read_log_warnings(log_path: Path) -> list[str]:
+        if not log_path.exists():
+            return []
+        content = log_path.read_text(encoding="utf-8", errors="replace")
+        warnings: list[str] = []
+        for line in content.splitlines():
+            if any(pat in line for pat in _WARNING_PATTERNS):
+                warnings.append(line)
+        return warnings
+
+    # ------------------------------------------------------------------
+    # Bib helpers
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _validate_reference(ref: Reference) -> None:
+        required = _REQUIRED_BIB_FIELDS.get(ref.entry_type)
+        if required is None:
+            raise BibGenerationError(
+                f"Reference '{ref.key}': unknown entry type '{ref.entry_type}'. "
+                f"Supported types: {sorted(_REQUIRED_BIB_FIELDS)}"
+            )
+        missing = [f for f in required if not getattr(ref, f, "")]
+        if missing:
+            raise BibGenerationError(
+                f"Reference '{ref.key}' (@{ref.entry_type}) is missing required "
+                f"fields: {missing}"
+            )
+
+    @staticmethod
+    def _format_bib_entry(ref: Reference) -> str:
+        field_lines: list[str] = []
+        for fname in _BIB_FIELD_ORDER:
+            val = getattr(ref, fname, "")
+            if val:
+                field_lines.append(f"  {fname:<12} = {{{val}}},")
+        body = "\n".join(field_lines)
+        return f"@{ref.entry_type}{{{ref.key},\n{body}\n}}"
 
     # ------------------------------------------------------------------
     # Validation

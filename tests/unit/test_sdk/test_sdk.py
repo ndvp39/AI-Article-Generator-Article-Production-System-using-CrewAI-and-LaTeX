@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from contextlib import ExitStack
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -81,12 +81,40 @@ def test_generate_article_skips_save_when_markdown_is_empty(mocks):
 
 
 # ---------------------------------------------------------------------------
-# stub methods — raise NotImplementedError (PLAN.md §6.1 signatures verified)
+# compile_pdf — delegation to LaTeXCompiler
 # ---------------------------------------------------------------------------
 
-def test_compile_pdf_raises_not_implemented(mocks):
-    with pytest.raises(NotImplementedError):
-        ArticleGeneratorSDK().compile_pdf("results/article.tex")
+
+def test_compile_pdf_instantiates_latex_compiler(mocks):
+    """compile_pdf() must create a LaTeXCompiler instance and delegate."""
+    with patch(f"{_BASE}.LaTeXCompiler") as mock_cls:
+        mock_cls.return_value.compile.return_value = MagicMock()
+        ArticleGeneratorSDK().compile_pdf("results/article.tex", "results/references.bib")
+    mock_cls.assert_called_once_with()
+
+
+def test_compile_pdf_passes_both_paths_to_compile(mocks):
+    with patch(f"{_BASE}.LaTeXCompiler") as mock_cls:
+        mock_cls.return_value.compile.return_value = MagicMock()
+        ArticleGeneratorSDK().compile_pdf("results/article.tex", "results/references.bib")
+    mock_cls.return_value.compile.assert_called_once_with(
+        "results/article.tex", "results/references.bib"
+    )
+
+
+def test_compile_pdf_returns_compilation_result(mocks):
+    expected = MagicMock()
+    with patch(f"{_BASE}.LaTeXCompiler") as mock_cls:
+        mock_cls.return_value.compile.return_value = expected
+        result = ArticleGeneratorSDK().compile_pdf(
+            "results/article.tex", "results/references.bib"
+        )
+    assert result is expected
+
+
+# ---------------------------------------------------------------------------
+# remaining stubs — still raise NotImplementedError
+# ---------------------------------------------------------------------------
 
 
 def test_get_pipeline_status_raises_not_implemented(mocks):

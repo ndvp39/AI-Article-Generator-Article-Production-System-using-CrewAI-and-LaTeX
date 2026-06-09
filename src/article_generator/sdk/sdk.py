@@ -6,6 +6,7 @@ from pathlib import Path
 from article_generator.constants import ARTICLE_MD_FILE, RESULTS_DIR
 from article_generator.services.crew_service import CrewService
 from article_generator.services.file_manager import FileManager
+from article_generator.services.latex_compiler import CompilationResult, LaTeXCompiler
 from article_generator.shared.config import ConfigManager
 from article_generator.shared.models import ArticleResult
 
@@ -28,9 +29,10 @@ class ArticleGeneratorSDK:
             self._file_manager.save_markdown(result.markdown_content, ARTICLE_MD_FILE)
         return result
 
-    def compile_pdf(self, tex_path: str) -> object:
+    def compile_pdf(self, tex_path: str, bib_path: str) -> CompilationResult:
         """Compile an existing .tex file to PDF (4-pass LuaLaTeX + biber)."""
-        raise NotImplementedError("LaTeXCompiler not yet implemented")
+        logger.info("compile_pdf — tex: %s, bib: %s", tex_path, bib_path)
+        return LaTeXCompiler().compile(tex_path, bib_path)
 
     def get_pipeline_status(self) -> object:
         """Return current stage, agent in progress, and queue depth."""
