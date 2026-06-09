@@ -309,17 +309,25 @@ def test_run_calls_shutdown_when_runner_raises():
     orch._shutdown.assert_called()
 
 
-def test_run_raises_pipeline_error_on_queue_timeout():
-    orch = ProcessOrchestrator(config=_CFG)
+# ---------------------------------------------------------------------------
+# run() — queue timeout
+# ---------------------------------------------------------------------------
 
-    mock_q = MagicMock()
-    mock_q.get.side_effect = queue_module.Empty()
+def test_run_raises_pipeline_error_on_queue_timeout():
+    """When the final queue never receives a message the orchestrator must raise."""
+    orch = ProcessOrchestrator(config=_CFG)
 
     with ExitStack() as stack:
         stack.enter_context(patch(_BASE + ".AgentProcessRunner"))
         stack.enter_context(patch(_BASE + ".GatekeeperRouter"))
         stack.enter_context(patch(_BASE + ".Watchdog"))
-        stack.enter_context(patch(_BASE + ".Queue", return_value=mock_q))
+        # Patch queue.Empty so the get() raises it immediately
+        mock_queue = MagicMock()
+        mock_queue.get.side_effect = queue_module.Empty
+        mock_queue.put = MagicMock()
+        stack.enter_context(
+            patch(_BASE + ".Queue", return_value=mock_queue)
+        )
 
-        with pytest.raises(RuntimeError, match="Pipeline error"):
+        with pytest.raises(RuntimeError, match="timed out"):
             orch.run("AI")

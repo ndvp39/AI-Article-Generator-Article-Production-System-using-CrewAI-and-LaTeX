@@ -55,16 +55,17 @@ MODEL_PRICING_CONFIG_VERSION = "1.00"
 # Multi-process IPC
 WATCHDOG_POLL_INTERVAL_SECONDS: float = 1.0
 IPC_QUEUE_TIMEOUT_SECONDS: float = 5.0
-DEFAULT_AGENT_TIMEOUT_SECONDS: int = 900
+DEFAULT_AGENT_TIMEOUT_SECONDS: int = 1200  # 20 min — large enough for several 300s backoff cycles
 
-# Per-agent timeouts (seconds) — must exceed max 429 backoff sleep (_BACKOFF_MAX=300)
+# Per-agent timeouts (seconds) — 20 min allows several full _RetryingLLM backoff cycles
+# while still enforcing deadlock detection via the Watchdog
 AGENT_TIMEOUT_SECONDS: dict[str, int] = {
-    "researcher": 900,
-    "writer": 900,
-    "editor": 900,
-    "graph_generator": 900,
-    "latex_formatter": 900,
-    "bidi_specialist": 900,
+    "researcher": 1200,
+    "writer": 1200,
+    "editor": 1200,
+    "graph_generator": 1200,
+    "latex_formatter": 1200,
+    "bidi_specialist": 1200,
 }
 
 # LLM providers

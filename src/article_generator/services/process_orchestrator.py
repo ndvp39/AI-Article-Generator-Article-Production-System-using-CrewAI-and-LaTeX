@@ -122,17 +122,20 @@ class ProcessOrchestrator:
         )
         logger.info("Initial message injected for researcher")
 
-        # 6. Block on final output from bidi specialist's output queue
-        total_timeout = (
-            sum(AGENT_TIMEOUT_SECONDS.get(n, DEFAULT_AGENT_TIMEOUT_SECONDS) for n in agent_names)
-            + 60  # buffer
-        )
+        # 6. Block on final output from bidi specialist's output queue.
+        # total_timeout = sum of all per-agent timeouts + 60s buffer.
+        total_timeout = sum(
+            AGENT_TIMEOUT_SECONDS.get(spec[3], DEFAULT_AGENT_TIMEOUT_SECONDS)
+            for spec in _PIPELINE_SPEC
+        ) + 60
         try:
             final_msg: AgentMessage = self._pipeline[_N_AGENTS - 1][1].get(
                 timeout=total_timeout
             )
         except queue_module.Empty:
-            self._raise_pipeline_error("timed out waiting for final output")
+            self._raise_pipeline_error(
+                f"timed out waiting for final output after {total_timeout}s"
+            )
 
         # 7. Shutdown cleanly
         self._shutdown()
