@@ -55,24 +55,24 @@ MODEL_PRICING_CONFIG_VERSION = "1.00"
 # Multi-process IPC
 WATCHDOG_POLL_INTERVAL_SECONDS: float = 1.0
 IPC_QUEUE_TIMEOUT_SECONDS: float = 5.0
-DEFAULT_AGENT_TIMEOUT_SECONDS: int = 1200  # 20 min — large enough for several 300s backoff cycles
+DEFAULT_AGENT_TIMEOUT_SECONDS: int = 3600  # 1 h — enough for complex LLM tasks + 429 backoff cycles
 
-# Per-agent timeouts (seconds) — 20 min allows several full _RetryingLLM backoff cycles
-# while still enforcing deadlock detection via the Watchdog
+# Per-agent timeouts (seconds) — 1 h per agent allows complex generation tasks and
+# multiple full _RetryingLLM backoff cycles while still catching true deadlocks
 AGENT_TIMEOUT_SECONDS: dict[str, int] = {
-    "researcher": 1200,
-    "writer": 1200,
-    "editor": 1200,
-    "graph_generator": 1200,
-    "latex_formatter": 1200,
-    "bidi_specialist": 1200,
+    "researcher": 3600,
+    "writer": 3600,
+    "editor": 3600,
+    "graph_generator": 3600,
+    "latex_formatter": 3600,
+    "bidi_specialist": 3600,
 }
 
 # LLM providers
 LLM_PROVIDER_CLAUDE = "claude"
 LLM_PROVIDER_GEMINI = "gemini"
 LLM_PROVIDERS_SUPPORTED = frozenset({LLM_PROVIDER_CLAUDE, LLM_PROVIDER_GEMINI})
-DEFAULT_CLAUDE_MODEL = "claude-sonnet-4-6"
+DEFAULT_CLAUDE_MODEL = "anthropic/claude-sonnet-4-6"
 DEFAULT_GEMINI_MODEL = "gemini/gemini-2.0-flash"
 
 # LLM tiers
