@@ -193,8 +193,8 @@ SERPER_API_KEY=your_serper_api_key_here
     "version": "1.00",
     "article": {
       "target_pages": 15,
-      "language": "english",
-      "bidi_language": "hebrew",
+      "language": "hebrew",
+      "bidi_language": "english",
       "citation_style": "numeric"
     },
     "agents": {

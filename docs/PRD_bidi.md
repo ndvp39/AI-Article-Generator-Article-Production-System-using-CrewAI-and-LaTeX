@@ -19,7 +19,7 @@ Key concepts:
 - **Weak characters:** Punctuation, spaces, numbers — resolved by surrounding strong characters.
 - **Neutral characters:** Spaces between directional runs — resolved by context.
 
-In mixed Hebrew-English documents, authors typically write **in the primary language** (the language that dominates) and embed the secondary language inline. For this project, the article is primarily in English (LTR) with at least one chapter where Hebrew text appears, requiring RTL paragraphs with embedded LTR terms.
+In mixed Hebrew-English documents, authors typically write **in the primary language** (the language that dominates) and embed the secondary language inline. For this project, the article is primarily in **Hebrew (RTL)** — all prose, headings, and explanations are written in Hebrew. English appears as the secondary, embedded language for technical terms, variable names, code identifiers, and citations, which must be LTR-guarded within Hebrew paragraphs.
 
 ### 1.2 LaTeX BiDi Support: bidi and polyglossia
 Plain LaTeX's typesetting engine (TeX) has no BiDi support. Two packages are required:
@@ -50,8 +50,8 @@ The `bidi` package introduces these LaTeX macros:
 
 ```latex
 \usepackage{polyglossia}
-\setdefaultlanguage{english}
-\setotherlanguage{hebrew}
+\setmainlanguage{hebrew}
+\setotherlanguage{english}
 ```
 
 Switching language context:
@@ -185,7 +185,7 @@ ResearcherAgent
     │  (finds Hebrew-language sources if topic warrants)
     ▼
 WriterAgent
-    │  writes English article with one Hebrew chapter
+    │  writes Hebrew article (main language RTL) with English technical terms inline
     │  uses plain Hebrew text (Unicode) in its output
     ▼
 BiDiSpecialistAgent          ◄── NEW validation pass
@@ -257,8 +257,8 @@ class BidiIssue:
 
 % Bidirectional and multilingual support
 \usepackage{polyglossia}
-\setdefaultlanguage{english}
-\setotherlanguage{hebrew}
+\setmainlanguage{hebrew}
+\setotherlanguage{english}
 
 % Must come AFTER polyglossia
 \usepackage{bidi}

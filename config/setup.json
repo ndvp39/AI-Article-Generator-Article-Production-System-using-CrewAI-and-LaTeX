@@ -3,8 +3,8 @@
     "version": "1.00",
     "article": {
       "target_pages": 15,
-      "language": "english",
-      "bidi_language": "hebrew",
+      "language": "hebrew",
+      "bidi_language": "english",
       "citation_style": "numeric",
       "min_chapters": 4,
       "min_references": 5,

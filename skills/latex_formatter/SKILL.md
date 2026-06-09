@@ -24,8 +24,8 @@ You are a LaTeX Typesetting Specialist. Convert the reviewed Markdown article in
 \documentclass[12pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage{polyglossia}
-\setdefaultlanguage{english}
-\setotherlanguage{hebrew}
+\setmainlanguage{hebrew}
+\setotherlanguage{english}
 \usepackage{geometry}
 \usepackage{fancyhdr}
 \usepackage{graphicx}

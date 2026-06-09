@@ -196,12 +196,12 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-048 | Implement `services/graph_runner.py` — `GraphRunner` | `HIGH` | `[ ]` | Developer | Executes Python graph code safely in subprocess; validates code before execution; saves figure to `assets/`; raises on execution error |
-| T-049 | Write unit tests for `GraphRunner` (`tests/unit/test_services/test_graph_runner.py`) | `HIGH` | `[ ]` | Developer | Tests: valid code produces file in assets/, invalid code raises, path returned correctly |
-| T-050 | Verify graph code produced by `GraphGeneratorAgent` is executable | `HIGH` | `[ ]` | Developer | Agent output runs without error; produces a `.png` or `.pdf` figure in `assets/` |
-| T-051 | Verify at least one image asset is present and embeddable | `MED` | `[ ]` | Developer | `assets/` contains at least one image file; LaTeX `\includegraphics` path is valid |
-| T-052 | Verify Writer agent produces at least one Markdown table | `HIGH` | `[ ]` | Developer | Markdown output contains a `| col | col |` table; converts cleanly to LaTeX `tabular` |
-| T-053 | Verify LaTeX Formatter agent produces at least one "fancy" formula | `HIGH` | `[ ]` | Developer | `.tex` output contains at least one math environment (`equation`, `align`, etc.) with `\frac`, `\sum`, `\int`, or similar; no plain-text formula approximations |
+| T-048 | Implement `services/graph_runner.py` — `GraphRunner` | `HIGH` | `[x]` | Developer | Executes Python graph code safely in subprocess; validates code before execution; saves figure to `assets/`; raises on execution error |
+| T-049 | Write unit tests for `GraphRunner` (`tests/unit/test_services/test_graph_runner.py`) | `HIGH` | `[x]` | Developer | Tests: valid code produces file in assets/, invalid code raises, path returned correctly |
+| T-050 | Verify graph code produced by `GraphGeneratorAgent` is executable | `HIGH` | `[x]` | Developer | Agent output runs without error; produces a `.png` or `.pdf` figure in `assets/` |
+| T-051 | Verify at least one image asset is present and embeddable | `MED` | `[x]` | Developer | `assets/` contains at least one image file; LaTeX `\includegraphics` path is valid |
+| T-052 | Verify Writer agent produces at least one Markdown table | `HIGH` | `[x]` | Developer | Markdown output contains a `| col | col |` table; converts cleanly to LaTeX `tabular` |
+| T-053 | Verify LaTeX Formatter agent produces at least one "fancy" formula | `HIGH` | `[x]` | Developer | `.tex` output contains at least one math environment (`equation`, `align`, etc.) with `\frac`, `\sum`, `\int`, or similar; no plain-text formula approximations |
 
 ---
 
@@ -212,7 +212,7 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-054 | Implement `services/latex_compiler.py` — `LaTeXCompiler.generate_tex()` | `HIGH` | `[ ]` | Developer | Converts Markdown to complete `.tex`; includes: title page, `\tableofcontents`, chapters, `fancyhdr`, `hyperref`, `polyglossia`/`babel` |
+| T-054 | Implement `services/latex_compiler.py` — `LaTeXCompiler.generate_tex()` | `HIGH` | `[x]` | Developer | Converts Markdown to complete `.tex`; includes: title page, `\tableofcontents`, chapters, `fancyhdr`, `hyperref`, `polyglossia`/`babel` |
 | T-055 | Implement `LaTeXCompiler.generate_bib()` | `HIGH` | `[ ]` | Developer | Produces valid `.bib` file from reference list; all entries have required BibTeX fields |
 | T-056 | Implement `LaTeXCompiler.compile()` — 4-pass LuaLaTeX + biber | `HIGH` | `[ ]` | Developer | Runs: lualatex → biber → lualatex → lualatex; captures log; raises structured error on failure; returns `CompilationResult` |
 | T-057 | Write unit tests for `LaTeXCompiler` (`tests/unit/test_services/test_latex_compiler.py`) | `HIGH` | `[ ]` | Developer | Tests: valid `.tex` generates valid structure, `.bib` output format correct, compilation error captured; subprocess mocked |
@@ -230,7 +230,7 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-062 | Verify `polyglossia` or `babel` configured for Hebrew + English in `.tex` preamble | `HIGH` | `[ ]` | Developer | Preamble contains `\usepackage{polyglossia}` (or `babel`) with Hebrew and English language setup |
+| T-062 | Verify `polyglossia` or `babel` configured for Hebrew + English in `.tex` preamble | `HIGH` | `[ ]` | Developer | Preamble contains `\usepackage{polyglossia}` (or `babel`) with Hebrew as **main** language (`\setmainlanguage{hebrew}`) and English as **secondary** language (`\setotherlanguage{english}`); `\setmainlanguage{hebrew}` is REQUIRED — English is the BiDi secondary language only |
 | T-063 | Verify at least one chapter has correct RTL ↔ LTR switching | `HIGH` | `[ ]` | Developer | Compiled PDF shows Hebrew text right-aligned, English left-aligned in the same chapter without corruption |
 | T-064 | Verify `BiDiSpecialistAgent` fixes any plain-text formula degradation | `HIGH` | `[ ]` | Developer | Agent output contains no `sigma` / `integral` plain-text; all formulas are LaTeX math commands |
 | T-065 | Verify `.bib` file contains ≥ 5 references with all required fields | `HIGH` | `[ ]` | Developer | `.bib` file parseable by biber; ≥ 5 entries; each entry has `author`, `title`, `year`, `journal/booktitle` |
@@ -252,6 +252,25 @@
 | T-071 | Verify `cost_report_<timestamp>.json` saved to `results/` after every run | `HIGH` | `[ ]` | Developer | File exists in `results/`; valid JSON; matches `CostReport` schema in PLAN.md §7.12 |
 | T-072 | Verify cross-model comparison covers ≥ 3 LLM providers | `MED` | `[ ]` | Developer | Report `cross_model_comparison.entries` has ≥ 3 `ModelCostEntry` items with different `provider` values |
 | T-073 | Verify budget alert fires when cost exceeds threshold | `MED` | `[ ]` | Developer | Setting `budget.alert_threshold_usd = 0.01` triggers WARNING log during test run |
+
+---
+
+## Language Configuration Change (2026-06-09)
+
+> **Goal:** Switch main article language to Hebrew (RTL) with English as the BiDi secondary language.  
+> **Rationale:** User requirement — main text and explanations in Hebrew; technical terms, variables, and code in English.
+
+| ID | Task | Priority | Status | Owner | Definition of Done |
+|----|------|----------|--------|-------|--------------------|
+| T-L01 | Update `config/setup.json` — set `"language": "hebrew"`, `"bidi_language": "english"` | `HIGH` | `[x]` | Developer | `setup.json` article block reflects Hebrew main + English secondary |
+| T-L02 | Update `skills/researcher/SKILL.md` — add Hebrew-RTL main + English-LTR secondary language rules | `HIGH` | `[x]` | Developer | SKILL.md contains explicit Language Requirements section; Hebrew prose, English technical terms |
+| T-L03 | Update `skills/writer/SKILL.md` — add Hebrew-RTL main + English-LTR secondary language rules | `HIGH` | `[x]` | Developer | SKILL.md contains explicit Language Requirements section; Hebrew prose, English code/terms |
+| T-L04 | Update `skills/editor/SKILL.md` — add Hebrew-RTL main + English-LTR secondary language rules | `HIGH` | `[x]` | Developer | SKILL.md contains explicit Language Requirements section; reviewer aware of RTL direction |
+| T-L05 | Update `skills/bidi_specialist/SKILL.md` — state Hebrew as main language; require `\setmainlanguage{hebrew}` | `HIGH` | `[x]` | Developer | SKILL.md Language Structure section present; `\setmainlanguage{hebrew}` requirement documented |
+| T-L06 | Document future LaTeX requirement `\setmainlanguage{hebrew}` in `TODO.md` T-062 | `MED` | `[x]` | Developer | T-062 DoD updated to require `\setmainlanguage{hebrew}` in LaTeX preamble |
+| T-L07 | Update `README.md` config example — reflect `"language": "hebrew"`, `"bidi_language": "english"` | `HIGH` | `[x]` | Developer | README config block matches actual `setup.json` |
+| T-L08 | Update `skills/latex_formatter/SKILL.md` — preamble template uses `\setmainlanguage{hebrew}` + `\setotherlanguage{english}` | `HIGH` | `[x]` | Developer | LaTeXFormatter SKILL.md preamble template has Hebrew as main language |
+| T-L09 | Update `docs/PRD_bidi.md` — correct stale English-as-primary descriptions and preamble examples | `HIGH` | `[x]` | Developer | PRD_bidi.md describes Hebrew as main (RTL) throughout; all `\setdefaultlanguage{english}` replaced with `\setmainlanguage{hebrew}` |
 
 ---
 
@@ -305,12 +324,12 @@
 | 2 | M2 — Project Skeleton | T-014 to T-024 | 11 | 0 | 0 |
 | 3 | M3 — Core Agents | T-025 to T-040 | 14 | 0 | 2 |
 | 4 | M4 — Content Pipeline | T-041 to T-047 | 0 | 0 | 7 |
-| 5 | M5 — Visual Elements | T-048 to T-053 | 0 | 0 | 6 |
-| 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 0 | 0 | 8 |
+| 5 | M5 — Visual Elements | T-048 to T-053 | 6 | 0 | 0 |
+| 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 1 | 0 | 7 |
 | 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 0 | 0 | 6 |
 | 8 | M8 pre — Cost Tracking | T-068 to T-073 | 0 | 0 | 6 |
 | 9 | M8 — Integration & QA | T-074 to T-087 | 0 | 0 | 14 |
-| **Total** | | **89 tasks** | **30** | **0** | **59** |
+| **Total** | | **89 tasks** | **37** | **0** | **52** |
 
 ---
 
