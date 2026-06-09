@@ -7,14 +7,13 @@ from __future__ import annotations
 #
 # DoD: Setting budget_alert_threshold_usd=0.01 triggers WARNING log and sets
 #      budget_alert_triggered=True in the generated CostReport.
-
 import logging
 from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
 
-from article_generator.services.cost_tracker import CostReport, CostTracker
+from article_generator.services.cost_tracker import CostTracker
 from article_generator.shared.gatekeeper_models import CallRecord
 
 _PRICING_PATH = Path(__file__).parent.parent.parent / "config" / "model_pricing.json"

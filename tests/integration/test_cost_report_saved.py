@@ -7,7 +7,6 @@ from __future__ import annotations
 # CostReport schema.
 #
 # DoD: File exists in results/; valid JSON; contains all CostReport top-level keys.
-
 import json
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -84,7 +83,7 @@ def sdk_with_mocks(tmp_path: Path):
         # Make save_report write a real JSON file to tmp_path
         def _real_save(r: CostReport, output_dir=None):
             from dataclasses import asdict
-            out = tmp_path / f"cost_report_2026-06-09T12-00-00.json"
+            out = tmp_path / "cost_report_2026-06-09T12-00-00.json"
             out.write_text(json.dumps(asdict(r), indent=2), encoding="utf-8")
             return out
 
@@ -190,7 +189,6 @@ def test_cost_report_cost_is_float(sdk_with_mocks):
 def test_save_report_writes_to_results_dir(tmp_path):
     """save_report() with no output_dir uses RESULTS_DIR; verify with a real write."""
     import json as _json
-    from dataclasses import asdict
 
     from article_generator.services.cost_tracker import CostTracker
 

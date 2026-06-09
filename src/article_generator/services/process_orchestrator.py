@@ -4,6 +4,7 @@ import logging
 import queue as queue_module
 from multiprocessing import Queue
 
+import article_generator.services.tasks.task_definitions as _td
 from article_generator.constants import (
     AGENT_TIMEOUT_SECONDS,
     ARTICLE_PDF_FILE,
@@ -19,20 +20,6 @@ from article_generator.services.agents.latex_formatter import LaTeXFormatterAgen
 from article_generator.services.agents.researcher import ResearcherAgent
 from article_generator.services.agents.writer import WriterAgent
 from article_generator.services.gatekeeper_router import GatekeeperRouter
-from article_generator.services.tasks.task_definitions import (
-    _BIDI_DESC,
-    _BIDI_OUT,
-    _GRAPH_DESC,
-    _GRAPH_OUT,
-    _LATEX_DESC,
-    _LATEX_OUT,
-    _RESEARCH_DESC,
-    _RESEARCH_OUT,
-    _REVIEW_DESC,
-    _REVIEW_OUT,
-    _WRITE_DESC,
-    _WRITE_OUT,
-)
 from article_generator.services.watchdog import Watchdog
 from article_generator.shared.ipc_models import AgentMessage
 from article_generator.shared.models import ArticleResult
@@ -43,12 +30,12 @@ logger = logging.getLogger(__name__)
 # Pipeline specification: (agent_cls, task_description, expected_output, agent_name)
 # Order must match sequential pipeline execution.
 _PIPELINE_SPEC: list[tuple[type, str, str, str]] = [
-    (ResearcherAgent,     _RESEARCH_DESC, _RESEARCH_OUT, "researcher"),
-    (WriterAgent,         _WRITE_DESC,    _WRITE_OUT,    "writer"),
-    (EditorAgent,         _REVIEW_DESC,   _REVIEW_OUT,   "editor"),
-    (GraphGeneratorAgent, _GRAPH_DESC,    _GRAPH_OUT,    "graph_generator"),
-    (LaTeXFormatterAgent, _LATEX_DESC,    _LATEX_OUT,    "latex_formatter"),
-    (BiDiSpecialistAgent, _BIDI_DESC,     _BIDI_OUT,     "bidi_specialist"),
+    (ResearcherAgent,     _td._RESEARCH_DESC, _td._RESEARCH_OUT, "researcher"),
+    (WriterAgent,         _td._WRITE_DESC,    _td._WRITE_OUT,    "writer"),
+    (EditorAgent,         _td._REVIEW_DESC,   _td._REVIEW_OUT,   "editor"),
+    (GraphGeneratorAgent, _td._GRAPH_DESC,    _td._GRAPH_OUT,    "graph_generator"),
+    (LaTeXFormatterAgent, _td._LATEX_DESC,    _td._LATEX_OUT,    "latex_formatter"),
+    (BiDiSpecialistAgent, _td._BIDI_DESC,     _td._BIDI_OUT,     "bidi_specialist"),
 ]
 
 _N_AGENTS = len(_PIPELINE_SPEC)

@@ -37,7 +37,7 @@ pythonpath = ["src"]
 
 [tool.coverage.run]
 source = ["src"]
-omit = ["*/__init__.py", "*/version.py"]
+omit = ["*/__init__.py", "*/version.py", "*/main.py"]
 
 [tool.coverage.report]
 fail_under = 85

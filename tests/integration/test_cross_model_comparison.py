@@ -7,7 +7,6 @@ from __future__ import annotations
 #
 # DoD: cross_model_comparison.entries has ≥ 3 ModelCostEntry items with
 #      different provider values.
-
 from pathlib import Path
 from unittest.mock import MagicMock
 

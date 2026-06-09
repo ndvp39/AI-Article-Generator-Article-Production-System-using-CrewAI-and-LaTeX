@@ -2,18 +2,15 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from article_generator.services.cost_tracker import (
-    AgentCostEntry,
     CostReport,
     CostTracker,
     CrossModelComparison,
-    ModelCostEntry,
 )
 from article_generator.shared.gatekeeper_models import CallRecord
 
@@ -407,7 +404,6 @@ def test_save_report_returns_path(pricing_file, tmp_path):
 
 
 def test_save_report_uses_results_dir_by_default(pricing_file):
-    from article_generator.constants import RESULTS_DIR
     report = _tracker([], pricing_file).generate_report()
     with patch("article_generator.services.cost_tracker.RESULTS_DIR", new=pricing_file.parent):
         path = _tracker([], pricing_file).save_report(report)

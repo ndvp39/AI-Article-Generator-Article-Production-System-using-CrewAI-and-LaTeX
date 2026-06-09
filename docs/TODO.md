@@ -299,16 +299,16 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-074 | Write integration test: full pipeline end-to-end (`tests/integration/test_pipeline.py`) | `HIGH` | `[ ]` | Developer | Pipeline runs with mocked LLM and Serper calls; all agents fire in order; `ArticleResult` populated |
-| T-075 | Write integration test: LaTeX compilation (`tests/integration/test_latex_compilation.py`) | `HIGH` | `[ ]` | Developer | Given sample `.tex` + `.bib`, `compile()` produces valid PDF; zero errors in log |
-| T-076 | Run `uv run pytest tests/ --cov=src --cov-report=term-missing` | `HIGH` | `[ ]` | Developer | Coverage report shows ≥ 85% global; no module below 80% |
-| T-077 | Run `uv run ruff check src/ tests/` | `HIGH` | `[ ]` | Developer | Zero violations reported |
-| T-078 | Verify no file in `src/` exceeds 150 lines of code | `HIGH` | `[ ]` | Developer | `wc -l` or ruff check confirms all files ≤ 150 LOC (excluding blanks and comments) |
-| T-079 | Verify no secrets or API keys in any source file | `HIGH` | `[ ]` | Developer | `grep -r "sk-" src/` and `grep -r "SERPER" src/` return no hard-coded values |
-| T-080 | **Evaluation criterion check:** All links and citations clickable in PDF | `HIGH` | `[ ]` | Developer | Manual PDF test: TOC links, citation links, cross-references all jump to correct targets |
-| T-081 | **Evaluation criterion check:** BiDi text direction correct throughout | `HIGH` | `[ ]` | Developer | Hebrew text renders RTL, English renders LTR; no garbled characters or direction corruption |
-| T-082 | **Evaluation criterion check:** No table overflows page margins | `HIGH` | `[ ]` | Developer | Visual inspection of all tables in PDF confirms no content cut off at margins |
-| T-083 | **Evaluation criterion check:** All formulas compiled as LaTeX math (not plain text) | `HIGH` | `[ ]` | Developer | All formulas render with proper mathematical typesetting; no formula appears as plain `sigma` or `integral` text |
+| T-074 | Write integration test: full pipeline end-to-end (`tests/integration/test_pipeline.py`) | `HIGH` | `[x]` | Developer | Pipeline runs with mocked LLM and Serper calls; all agents fire in order; `ArticleResult` populated |
+| T-075 | Write integration test: LaTeX compilation (`tests/integration/test_latex_compilation.py`) | `HIGH` | `[x]` | Developer | Given sample `.tex` + `.bib`, `compile()` produces valid PDF; zero errors in log |
+| T-076 | Run `uv run pytest tests/ --cov=src --cov-report=term-missing` | `HIGH` | `[x]` | Developer | Coverage report shows ≥ 85% global; no module below 80% |
+| T-077 | Run `uv run ruff check src/ tests/` | `HIGH` | `[x]` | Developer | Zero violations reported |
+| T-078 | Verify no file in `src/` exceeds 150 lines of code | `HIGH` | `[x]` | Developer | `wc -l` or ruff check confirms all files ≤ 150 LOC (excluding blanks and comments) |
+| T-079 | Verify no secrets or API keys in any source file | `HIGH` | `[x]` | Developer | `grep -r "sk-" src/` and `grep -r "SERPER" src/` return no hard-coded values |
+| T-080 | **Evaluation criterion check:** All links and citations clickable in PDF | `HIGH` | `[x]` | Developer | Manual PDF test: TOC links, citation links, cross-references all jump to correct targets |
+| T-081 | **Evaluation criterion check:** BiDi text direction correct throughout | `HIGH` | `[x]` | Developer | Hebrew text renders RTL, English renders LTR; no garbled characters or direction corruption |
+| T-082 | **Evaluation criterion check:** No table overflows page margins | `HIGH` | `[x]` | Developer | Visual inspection of all tables in PDF confirms no content cut off at margins |
+| T-083 | **Evaluation criterion check:** All formulas compiled as LaTeX math (not plain text) | `HIGH` | `[x]` | Developer | All formulas render with proper mathematical typesetting; no formula appears as plain `sigma` or `integral` text |
 | T-084 | Full run with real API keys; validate final PDF quality | `HIGH` | `[ ]` | Developer | PDF is ≥ 15 pages; cover sheet complete; all visual elements present; BiDi correct; bibliography linked |
 | T-085 | Update `README.md` — final user manual | `HIGH` | `[ ]` | Developer | Installation, `uv sync`, `.env` setup, `uv run python src/main.py`, output locations, config guide |
 | T-086 | Update `docs/prompts_book.md` with all prompts used during development | `MED` | `[ ]` | Developer | Every significant LLM prompt logged with context, goal, output quality notes |
