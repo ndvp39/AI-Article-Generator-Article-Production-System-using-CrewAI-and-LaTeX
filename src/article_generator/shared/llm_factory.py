@@ -48,17 +48,22 @@ def _call_with_retry(call_fn, messages, *args, **kwargs) -> Any:
             raise
 
 
-class _RetryingLLM(LLM):
-    """Subclass of crewai.LLM that overrides call() with infinite 429 backoff.
+def _inject_retry(llm: Any) -> None:
+    """Replace llm.call in-place with a 429-retrying version.
 
-    Passes Pydantic validation on Agent(llm=...) because it IS a BaseLLM.
+    BaseLLM.__setattr__ falls back to object.__setattr__ for non-field
+    attributes, so this works on any native provider (Gemini, Anthropic, …)
+    regardless of which concrete class LLM.__new__ returned.
     """
+    original_call = llm.call
 
-    def call(self, messages, *args, **kwargs) -> Any:
-        return _call_with_retry(super().call, messages, *args, **kwargs)
+    def _retry_call(messages, *args, **kwargs):
+        return _call_with_retry(original_call, messages, *args, **kwargs)
+
+    llm.call = _retry_call
 
 
-def build_llm(temperature: float = 0.7) -> _RetryingLLM:
+def build_llm(temperature: float = 0.7) -> Any:
     """Return a rate-limit-resilient LLM based on the ACTIVE_LLM env variable.
 
     ACTIVE_LLM=claude  →  uses LLM_API_KEY  + claude-sonnet-4-6
@@ -78,7 +83,7 @@ def build_llm(temperature: float = 0.7) -> _RetryingLLM:
     return _build_gemini(temperature)
 
 
-def _build_claude(temperature: float) -> _RetryingLLM:
+def _build_claude(temperature: float) -> Any:
     api_key = os.environ.get("LLM_API_KEY")
     if not api_key:
         raise OSError(
@@ -86,10 +91,12 @@ def _build_claude(temperature: float) -> _RetryingLLM:
             "Required when ACTIVE_LLM=claude. Add it to your .env file."
         )
     logger.info("LLM provider: Claude (%s)", DEFAULT_CLAUDE_MODEL)
-    return _RetryingLLM(model=DEFAULT_CLAUDE_MODEL, api_key=api_key, temperature=temperature)
+    llm = LLM(model=DEFAULT_CLAUDE_MODEL, api_key=api_key, temperature=temperature)
+    _inject_retry(llm)
+    return llm
 
 
-def _build_gemini(temperature: float) -> _RetryingLLM:
+def _build_gemini(temperature: float) -> Any:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise OSError(
@@ -97,4 +104,6 @@ def _build_gemini(temperature: float) -> _RetryingLLM:
             "Required when ACTIVE_LLM=gemini. Add it to your .env file."
         )
     logger.info("LLM provider: Gemini (%s)", DEFAULT_GEMINI_MODEL)
-    return _RetryingLLM(model=DEFAULT_GEMINI_MODEL, api_key=api_key, temperature=temperature)
+    llm = LLM(model=DEFAULT_GEMINI_MODEL, api_key=api_key, temperature=temperature)
+    _inject_retry(llm)
+    return llm

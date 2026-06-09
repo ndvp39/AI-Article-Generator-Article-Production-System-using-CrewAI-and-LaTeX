@@ -7,10 +7,10 @@ import pytest
 _BASE = "article_generator.shared.llm_factory"
 
 
-@pytest.fixture
-def patch_retrying_llm():
-    """Patch _RetryingLLM constructor so no real LLM init / API calls happen."""
-    with patch(f"{_BASE}._RetryingLLM") as mock_cls:
+@pytest.fixture(autouse=True)
+def patch_llm():
+    """Always mock crewai.LLM so no real API calls are made."""
+    with patch(f"{_BASE}.LLM") as mock_cls:
         mock_cls.return_value = MagicMock()
         yield mock_cls
 
@@ -20,39 +20,39 @@ def patch_retrying_llm():
 # ---------------------------------------------------------------------------
 
 
-def test_build_llm_defaults_to_claude_when_env_unset(patch_retrying_llm):
+def test_build_llm_defaults_to_claude_when_env_unset(patch_llm):
     from article_generator.shared.llm_factory import build_llm
     with patch("os.environ.get", side_effect=lambda k, d=None: {"LLM_API_KEY": "sk-test"}.get(k, d)):
         build_llm()
-    assert patch_retrying_llm.called
-    call_kwargs = patch_retrying_llm.call_args.kwargs
+    assert patch_llm.called
+    call_kwargs = patch_llm.call_args.kwargs
     assert "claude" in call_kwargs.get("model", "").lower()
 
 
-def test_build_llm_claude_uses_llm_api_key(patch_retrying_llm, monkeypatch):
+def test_build_llm_claude_uses_llm_api_key(patch_llm, monkeypatch):
     monkeypatch.setenv("ACTIVE_LLM", "claude")
     monkeypatch.setenv("LLM_API_KEY", "sk-my-key")
     from article_generator.shared.llm_factory import build_llm
     build_llm()
-    assert patch_retrying_llm.call_args.kwargs["api_key"] == "sk-my-key"
+    assert patch_llm.call_args.kwargs["api_key"] == "sk-my-key"
 
 
-def test_build_llm_gemini_uses_gemini_api_key(patch_retrying_llm, monkeypatch):
+def test_build_llm_gemini_uses_gemini_api_key(patch_llm, monkeypatch):
     monkeypatch.setenv("ACTIVE_LLM", "gemini")
     monkeypatch.setenv("GEMINI_API_KEY", "gm-key")
     from article_generator.shared.llm_factory import build_llm
     build_llm()
-    call_kwargs = patch_retrying_llm.call_args.kwargs
+    call_kwargs = patch_llm.call_args.kwargs
     assert "gemini" in call_kwargs.get("model", "").lower()
     assert call_kwargs["api_key"] == "gm-key"
 
 
-def test_build_llm_passes_temperature(patch_retrying_llm, monkeypatch):
+def test_build_llm_passes_temperature(patch_llm, monkeypatch):
     monkeypatch.setenv("ACTIVE_LLM", "claude")
     monkeypatch.setenv("LLM_API_KEY", "sk-key")
     from article_generator.shared.llm_factory import build_llm
     build_llm(temperature=0.3)
-    assert patch_retrying_llm.call_args.kwargs["temperature"] == 0.3
+    assert patch_llm.call_args.kwargs["temperature"] == 0.3
 
 
 def test_build_llm_raises_on_unsupported_provider(monkeypatch):
@@ -78,23 +78,24 @@ def test_build_llm_raises_oserror_when_gemini_key_missing(monkeypatch):
         build_llm()
 
 
-def test_build_llm_returns_retrying_llm_instance(patch_retrying_llm, monkeypatch):
+def test_build_llm_returns_llm_instance(patch_llm, monkeypatch):
     monkeypatch.setenv("ACTIVE_LLM", "claude")
     monkeypatch.setenv("LLM_API_KEY", "sk-key")
     from article_generator.shared.llm_factory import build_llm
     result = build_llm()
-    assert result is patch_retrying_llm.return_value
+    assert result is patch_llm.return_value
 
 
-# ---------------------------------------------------------------------------
-# _RetryingLLM — class identity
-# ---------------------------------------------------------------------------
-
-
-def test_retrying_llm_is_subclass_of_llm():
-    from crewai import LLM
-    from article_generator.shared.llm_factory import _RetryingLLM
-    assert issubclass(_RetryingLLM, LLM)
+def test_build_llm_injects_retry_into_call(patch_llm, monkeypatch):
+    """After build_llm(), llm.call should be our retry wrapper, not the original."""
+    monkeypatch.setenv("ACTIVE_LLM", "claude")
+    monkeypatch.setenv("LLM_API_KEY", "sk-key")
+    original_call = MagicMock(return_value="original")
+    patch_llm.return_value.call = original_call
+    from article_generator.shared.llm_factory import build_llm
+    result = build_llm()
+    # After injection the call attribute must be a different callable
+    assert result.call is not original_call
 
 
 # ---------------------------------------------------------------------------
@@ -133,7 +134,7 @@ def test_call_with_retry_raises_non_429_immediately():
 
 def test_call_with_retry_backoff_doubles_each_attempt():
     import article_generator.shared.llm_factory as factory_module
-    from article_generator.shared.llm_factory import _call_with_retry, _BACKOFF_BASE
+    from article_generator.shared.llm_factory import _BACKOFF_BASE, _call_with_retry
 
     sleep_calls = []
     attempts = [0]
