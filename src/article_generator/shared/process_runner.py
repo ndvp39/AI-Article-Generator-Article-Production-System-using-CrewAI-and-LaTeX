@@ -37,8 +37,13 @@ def _agent_subprocess(
         llm = build_llm(**llm_kwargs)
         agent = agent_cls(llm=llm).build()
 
+        content_prefix = (
+            f"CONTENT FROM PREVIOUS AGENT:\n\n{in_msg.content}\n\n---\n\n"
+            if in_msg.content and in_msg.message_type == "output"
+            else ""
+        )
         task = Task(
-            description=task_description.format(topic=in_msg.topic),
+            description=content_prefix + task_description.replace("{topic}", in_msg.topic),
             expected_output=expected_output,
             agent=agent,
         )
