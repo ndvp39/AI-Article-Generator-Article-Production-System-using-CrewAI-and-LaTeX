@@ -4,10 +4,12 @@ import logging
 from pathlib import Path
 
 from article_generator.constants import ARTICLE_MD_FILE, RESULTS_DIR
+from article_generator.services.cost_tracker import CostReport, CostTracker, CrossModelComparison
 from article_generator.services.crew_service import CrewService
 from article_generator.services.file_manager import FileManager
 from article_generator.services.latex_compiler import CompilationResult, LaTeXCompiler
 from article_generator.shared.config import ConfigManager
+from article_generator.shared.gatekeeper import ApiGatekeeper
 from article_generator.shared.models import ArticleResult
 
 logger = logging.getLogger(__name__)
@@ -20,6 +22,9 @@ class ArticleGeneratorSDK:
         self._config_manager = ConfigManager(config_dir=Path(config_path).parent)
         self._crew_service = CrewService(config_manager=self._config_manager)
         self._file_manager = FileManager(base_dir=RESULTS_DIR)
+        limits = self._config_manager.load_rate_limits()
+        self._gatekeeper = ApiGatekeeper(limits["default"])
+        self._cost_tracker = CostTracker(gatekeeper=self._gatekeeper)
 
     def generate_article(self, topic: str) -> ArticleResult:
         """Run full pipeline: research → write → edit → format → compile."""
@@ -27,6 +32,8 @@ class ArticleGeneratorSDK:
         result = self._crew_service.run_pipeline(topic)
         if result.markdown_content:
             self._file_manager.save_markdown(result.markdown_content, ARTICLE_MD_FILE)
+        report = self._cost_tracker.generate_report()
+        self._cost_tracker.save_report(report)
         return result
 
     def compile_pdf(self, tex_path: str, bib_path: str) -> CompilationResult:
@@ -38,10 +45,12 @@ class ArticleGeneratorSDK:
         """Return current stage, agent in progress, and queue depth."""
         raise NotImplementedError("Pipeline status tracking not yet implemented")
 
-    def get_cost_report(self) -> object:
+    def get_cost_report(self) -> CostReport:
         """Return full token usage breakdown, USD costs, and cross-model comparison."""
-        raise NotImplementedError("CostTracker not yet implemented")
+        logger.info("get_cost_report called")
+        return self._cost_tracker.generate_report()
 
-    def compare_model_costs(self, models: list[str]) -> object:
+    def compare_model_costs(self, models: list[str]) -> CrossModelComparison:
         """Project cost of current token usage across given LLM model identifiers."""
-        raise NotImplementedError("CostTracker not yet implemented")
+        logger.info("compare_model_costs — models: %s", models)
+        return self._cost_tracker.compare_models(models)

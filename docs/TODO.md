@@ -247,11 +247,11 @@
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
 | T-068 | Implement `services/cost_tracker.py` — `CostTracker` | `HIGH` | `[x]` | Developer | `generate_report()`, `compare_models()`, `check_budget_alert()`, `save_report()` all functional; pricing loaded from `model_pricing.json` |
-| T-069 | Wire `CostTracker` into `ArticleGeneratorSDK` | `HIGH` | `[ ]` | Developer | `SDK.get_cost_report()` and `SDK.compare_model_costs()` return populated objects |
-| T-070 | Write unit tests for `CostTracker` (`tests/unit/test_services/test_cost_tracker.py`) | `HIGH` | `[ ]` | Developer | Tests: cost calculation accuracy, report format, budget alert fires at threshold, comparison covers ≥ 3 models; ApiGatekeeper mocked |
-| T-071 | Verify `cost_report_<timestamp>.json` saved to `results/` after every run | `HIGH` | `[ ]` | Developer | File exists in `results/`; valid JSON; matches `CostReport` schema in PLAN.md §7.12 |
-| T-072 | Verify cross-model comparison covers ≥ 3 LLM providers | `MED` | `[ ]` | Developer | Report `cross_model_comparison.entries` has ≥ 3 `ModelCostEntry` items with different `provider` values |
-| T-073 | Verify budget alert fires when cost exceeds threshold | `MED` | `[ ]` | Developer | Setting `budget.alert_threshold_usd = 0.01` triggers WARNING log during test run |
+| T-069 | Wire `CostTracker` into `ArticleGeneratorSDK` | `HIGH` | `[x]` | Developer | `SDK.get_cost_report()` and `SDK.compare_model_costs()` return populated objects |
+| T-070 | Write unit tests for `CostTracker` (`tests/unit/test_services/test_cost_tracker.py`) | `HIGH` | `[x]` | Developer | Tests: cost calculation accuracy, report format, budget alert fires at threshold, comparison covers ≥ 3 models; ApiGatekeeper mocked |
+| T-071 | Verify `cost_report_<timestamp>.json` saved to `results/` after every run | `HIGH` | `[x]` | Developer | File exists in `results/`; valid JSON; matches `CostReport` schema in PLAN.md §7.12 |
+| T-072 | Verify cross-model comparison covers ≥ 3 LLM providers | `MED` | `[x]` | Developer | Report `cross_model_comparison.entries` has ≥ 3 `ModelCostEntry` items with different `provider` values |
+| T-073 | Verify budget alert fires when cost exceeds threshold | `MED` | `[x]` | Developer | Setting `budget.alert_threshold_usd = 0.01` triggers WARNING log during test run |
 
 ---
 
@@ -327,7 +327,7 @@
 | 5 | M5 — Visual Elements | T-048 to T-053 | 6 | 0 | 0 |
 | 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 4 | 0 | 4 |
 | 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 0 | 0 | 6 |
-| 8 | M8 pre — Cost Tracking | T-068 to T-073 | 1 | 0 | 5 |
+| 8 | M8 pre — Cost Tracking | T-068 to T-073 | 6 | 0 | 0 |
 | 9 | M8 — Integration & QA | T-074 to T-087 | 0 | 0 | 14 |
 | **Total** | | **89 tasks** | **40** | **0** | **49** |
 

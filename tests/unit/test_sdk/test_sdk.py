@@ -29,6 +29,8 @@ def mocks():
             "config": stack.enter_context(patch(f"{_BASE}.ConfigManager")),
             "crew": stack.enter_context(patch(f"{_BASE}.CrewService")),
             "files": stack.enter_context(patch(f"{_BASE}.FileManager")),
+            "gatekeeper": stack.enter_context(patch(f"{_BASE}.ApiGatekeeper")),
+            "cost_tracker": stack.enter_context(patch(f"{_BASE}.CostTracker")),
         }
         m["crew"].return_value.run_pipeline.return_value = _make_result()
         yield m
@@ -122,11 +124,54 @@ def test_get_pipeline_status_raises_not_implemented(mocks):
         ArticleGeneratorSDK().get_pipeline_status()
 
 
-def test_get_cost_report_raises_not_implemented(mocks):
-    with pytest.raises(NotImplementedError):
-        ArticleGeneratorSDK().get_cost_report()
+# ---------------------------------------------------------------------------
+# get_cost_report — delegates to CostTracker.generate_report
+# ---------------------------------------------------------------------------
 
 
-def test_compare_model_costs_raises_not_implemented(mocks):
-    with pytest.raises(NotImplementedError):
-        ArticleGeneratorSDK().compare_model_costs(["claude-sonnet-4-6", "gemini/gemini-2.0-flash"])
+def test_get_cost_report_calls_generate_report(mocks):
+    ArticleGeneratorSDK().get_cost_report()
+    mocks["cost_tracker"].return_value.generate_report.assert_called_once_with()
+
+
+def test_get_cost_report_returns_generate_report_result(mocks):
+    expected = MagicMock()
+    mocks["cost_tracker"].return_value.generate_report.return_value = expected
+    result = ArticleGeneratorSDK().get_cost_report()
+    assert result is expected
+
+
+# ---------------------------------------------------------------------------
+# compare_model_costs — delegates to CostTracker.compare_models
+# ---------------------------------------------------------------------------
+
+
+def test_compare_model_costs_calls_compare_models(mocks):
+    models = ["claude-sonnet-4-6", "gpt-4o", "gemini-2.0-flash"]
+    ArticleGeneratorSDK().compare_model_costs(models)
+    mocks["cost_tracker"].return_value.compare_models.assert_called_once_with(models)
+
+
+def test_compare_model_costs_returns_compare_models_result(mocks):
+    expected = MagicMock()
+    mocks["cost_tracker"].return_value.compare_models.return_value = expected
+    result = ArticleGeneratorSDK().compare_model_costs(["claude-sonnet-4-6"])
+    assert result is expected
+
+
+# ---------------------------------------------------------------------------
+# __init__ — CostTracker wiring
+# ---------------------------------------------------------------------------
+
+
+def test_init_creates_gatekeeper_with_default_limits(mocks):
+    ArticleGeneratorSDK()
+    rate_limits = mocks["config"].return_value.load_rate_limits.return_value
+    mocks["gatekeeper"].assert_called_once_with(rate_limits["default"])
+
+
+def test_init_passes_gatekeeper_to_cost_tracker(mocks):
+    ArticleGeneratorSDK()
+    mocks["cost_tracker"].assert_called_once_with(
+        gatekeeper=mocks["gatekeeper"].return_value
+    )
