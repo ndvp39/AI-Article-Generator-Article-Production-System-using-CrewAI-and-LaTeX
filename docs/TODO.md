@@ -230,12 +230,12 @@
 
 | ID | Task | Priority | Status | Owner | Definition of Done |
 |----|------|----------|--------|-------|--------------------|
-| T-062 | Verify `polyglossia` or `babel` configured for Hebrew + English in `.tex` preamble | `HIGH` | `[ ]` | Developer | Preamble contains `\usepackage{polyglossia}` (or `babel`) with Hebrew as **main** language (`\setmainlanguage{hebrew}`) and English as **secondary** language (`\setotherlanguage{english}`); `\setmainlanguage{hebrew}` is REQUIRED — English is the BiDi secondary language only |
-| T-063 | Verify at least one chapter has correct RTL ↔ LTR switching | `HIGH` | `[ ]` | Developer | Compiled PDF shows Hebrew text right-aligned, English left-aligned in the same chapter without corruption |
-| T-064 | Verify `BiDiSpecialistAgent` fixes any plain-text formula degradation | `HIGH` | `[ ]` | Developer | Agent output contains no `sigma` / `integral` plain-text; all formulas are LaTeX math commands |
-| T-065 | Verify `.bib` file contains ≥ 5 references with all required fields | `HIGH` | `[ ]` | Developer | `.bib` file parseable by biber; ≥ 5 entries; each entry has `author`, `title`, `year`, `journal/booktitle` |
-| T-066 | Verify all `\cite{key}` commands in `.tex` resolve to `.bib` entries | `HIGH` | `[ ]` | Developer | After 4-pass compilation, no "undefined citation" warnings in LaTeX log |
-| T-067 | Verify bibliography appears as final section in PDF | `HIGH` | `[ ]` | Developer | Last section of PDF is bibliography; all entries displayed; clicking in-text citation jumps to entry |
+| T-062 | Verify `polyglossia` or `babel` configured for Hebrew + English in `.tex` preamble | `HIGH` | `[x]` | Developer | Preamble contains `\usepackage{polyglossia}` (or `babel`) with Hebrew as **main** language (`\setmainlanguage{hebrew}`) and English as **secondary** language (`\setotherlanguage{english}`); `\setmainlanguage{hebrew}` is REQUIRED — English is the BiDi secondary language only |
+| T-063 | Verify at least one chapter has correct RTL ↔ LTR switching | `HIGH` | `[x]` | Developer | Compiled PDF shows Hebrew text right-aligned, English left-aligned in the same chapter without corruption |
+| T-064 | Verify `BiDiSpecialistAgent` fixes any plain-text formula degradation | `HIGH` | `[x]` | Developer | Agent output contains no `sigma` / `integral` plain-text; all formulas are LaTeX math commands |
+| T-065 | Verify `.bib` file contains ≥ 5 references with all required fields | `HIGH` | `[x]` | Developer | `.bib` file parseable by biber; ≥ 5 entries; each entry has `author`, `title`, `year`, `journal/booktitle` |
+| T-066 | Verify all `\cite{key}` commands in `.tex` resolve to `.bib` entries | `HIGH` | `[x]` | Developer | After 4-pass compilation, no "undefined citation" warnings in LaTeX log |
+| T-067 | Verify bibliography appears as final section in PDF | `HIGH` | `[x]` | Developer | Last section of PDF is bibliography; all entries displayed; clicking in-text citation jumps to entry |
 
 ---
 
