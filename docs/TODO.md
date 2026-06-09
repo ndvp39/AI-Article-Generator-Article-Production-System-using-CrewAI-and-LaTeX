@@ -314,6 +314,7 @@
 | T-086 | Update `docs/prompts_book.md` with all prompts used during development | `MED` | `[ ]` | Developer | Every significant LLM prompt logged with context, goal, output quality notes |
 | T-087 | Final review: verify all items in Project.md §5 Evaluation Criteria are met | `HIGH` | `[ ]` | Developer | All 4 criteria checked off: links clickable, BiDi correct, tables within margins, formulas compiled |
 | T-088 | Dynamic multi-provider/tier rate limiting — `LLM_TIER` env var + TPM throttle + 429 backoff | `HIGH` | `[x]` | Developer | `rate_limits.json` v1.01 with `providers.{claude,gemini}.{free,pro}`; `ServiceLimits.tokens_per_minute`; `load_provider_limits()`; TPM sliding window in `ApiGatekeeper`; 429 uses `retry_after_seconds`; 514 tests pass |
+| T-089 | Reactive infinite exponential backoff — remove predictive RPM/TPM counting from `ApiGatekeeper`; 429 → 5s→10s→20s→...→300s infinite retry; bump all `AGENT_TIMEOUT_SECONDS` to 900 | `HIGH` | `[x]` | Developer | `gatekeeper.py` has no sliding windows; 429 retries infinitely with doubling backoff; `DEFAULT_AGENT_TIMEOUT_SECONDS=900`; all per-agent timeouts=900; 3 new backoff tests added; all tests pass |
 
 ---
 

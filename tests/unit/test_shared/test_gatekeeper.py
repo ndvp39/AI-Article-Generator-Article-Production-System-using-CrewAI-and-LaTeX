@@ -229,25 +229,6 @@ def test_token_stats_total_tokens_property():
 
 
 # ---------------------------------------------------------------------------
-# Rate limiting
-# ---------------------------------------------------------------------------
-
-def test_rate_limit_per_minute_triggers_sleep():
-    gk = make_gk(requests_per_minute=1, requests_per_hour=1000)
-    slept = []
-
-    def fake_sleep(d):
-        slept.append(d)
-        gk._minute_window.clear()  # simulate time passing
-
-    with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=fake_sleep):
-        gk.execute(lambda: None)   # fills the 1-RPM slot
-        gk.execute(lambda: None)   # hits limit → sleeps
-
-    assert len(slept) >= 1
-
-
-# ---------------------------------------------------------------------------
 # Thread safety
 # ---------------------------------------------------------------------------
 
@@ -272,54 +253,10 @@ def test_concurrent_calls_all_logged():
 
 
 # ---------------------------------------------------------------------------
-# TPM throttling
+# 429 infinite exponential backoff
 # ---------------------------------------------------------------------------
 
-def test_tpm_throttle_triggers_sleep_when_limit_exceeded():
-    gk = make_gk(requests_per_minute=1000, tokens_per_minute=100)
-    now = time.monotonic()
-    gk._token_window.append((now, 100))  # at limit
-
-    slept = []
-
-    def fake_sleep(d):
-        slept.append(d)
-        gk._token_window.clear()  # simulate time passing
-
-    with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=fake_sleep):
-        gk.execute(lambda: None)
-
-    assert len(slept) >= 1
-
-
-def test_tpm_zero_never_throttles():
-    gk = make_gk(requests_per_minute=1000, tokens_per_minute=0)
-    now = time.monotonic()
-    for _ in range(5):
-        gk._token_window.append((now, 1_000_000))  # huge tokens — ignored
-
-    slept = []
-    with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=lambda d: slept.append(d)):
-        gk.execute(lambda: None)
-
-    assert len(slept) == 0
-
-
-def test_successful_call_records_tokens_in_window():
-    gk = make_gk()
-    resp = MagicMock()
-    resp.usage = {"input_tokens": 50, "output_tokens": 100}
-    gk.execute(lambda: resp)
-    assert len(gk._token_window) == 1
-    assert gk._token_window[0][1] == 150
-
-
-# ---------------------------------------------------------------------------
-# 429 retry uses retry_after_seconds; other codes use exponential backoff
-# ---------------------------------------------------------------------------
-
-def test_429_uses_retry_after_seconds():
-    retry_after = 45
+def test_429_backoff_starts_at_base_seconds():
     attempts = []
 
     def flaky():
@@ -332,10 +269,50 @@ def test_429_uses_retry_after_seconds():
 
     slept = []
     with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=lambda d: slept.append(d)):
-        make_gk(max_retries=3, retry_after_seconds=retry_after).execute(flaky)
+        make_gk(max_retries=3).execute(flaky)
 
-    assert slept[0] == retry_after
+    assert slept[0] == 5  # _BACKOFF_BASE
 
+
+def test_429_backoff_doubles_each_attempt():
+    attempts = []
+
+    def flaky():
+        attempts.append(1)
+        if len(attempts) < 4:
+            err = Exception("rate limited")
+            err.status_code = 429
+            raise err
+        return "ok"
+
+    slept = []
+    with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=lambda d: slept.append(d)):
+        make_gk(max_retries=1).execute(flaky)
+
+    assert slept == [5, 10, 20]
+
+
+def test_429_retries_infinitely_not_bounded_by_max_retries():
+    attempts = []
+
+    def flaky():
+        attempts.append(1)
+        if len(attempts) <= 5:
+            err = Exception("rate limited")
+            err.status_code = 429
+            raise err
+        return "ok"
+
+    with patch("article_generator.shared.gatekeeper.time.sleep"):
+        result = make_gk(max_retries=1).execute(flaky)
+
+    assert result == "ok"
+    assert len(attempts) == 6  # 5 failures + 1 success
+
+
+# ---------------------------------------------------------------------------
+# Non-429 uses exponential backoff
+# ---------------------------------------------------------------------------
 
 def test_non_429_uses_exponential_backoff():
     attempts = []
