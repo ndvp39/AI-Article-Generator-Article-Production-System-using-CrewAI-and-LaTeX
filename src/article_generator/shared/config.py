@@ -31,6 +31,7 @@ class ServiceLimits:
     retry_after_seconds: int
     max_retries: int
     max_queue_depth: int
+    tokens_per_minute: int = 0  # 0 = not enforced
 
 
 @dataclass
@@ -54,11 +55,28 @@ class ConfigManager:
         return root
 
     def load_rate_limits(self) -> dict[str, ServiceLimits]:
+        """Load non-LLM service limits (e.g. serper)."""
+        root = self._load_rate_limits_root()
+        services_raw = self._require(root, "services", RATE_LIMITS_CONFIG_FILE)
+        return {name: ServiceLimits(**svc) for name, svc in services_raw.items()}
+
+    def load_provider_limits(self, provider: str, tier: str) -> ServiceLimits:
+        """Load LLM provider limits for *provider* and *tier* from rate_limits.json."""
+        root = self._load_rate_limits_root()
+        providers = self._require(root, "providers", RATE_LIMITS_CONFIG_FILE)
+        if provider not in providers:
+            raise ConfigKeyError(f"Unknown provider '{provider}' in {RATE_LIMITS_CONFIG_FILE}")
+        if tier not in providers[provider]:
+            raise ConfigKeyError(
+                f"Unknown tier '{tier}' for provider '{provider}' in {RATE_LIMITS_CONFIG_FILE}"
+            )
+        return ServiceLimits(**providers[provider][tier])
+
+    def _load_rate_limits_root(self) -> dict:
         data = self._load(RATE_LIMITS_CONFIG_FILE)
         root = self._require(data, "rate_limits", RATE_LIMITS_CONFIG_FILE)
         self._validate_version(root, RATE_LIMITS_CONFIG_FILE, RATE_LIMITS_CONFIG_VERSION)
-        services_raw = self._require(root, "services", RATE_LIMITS_CONFIG_FILE)
-        return {name: ServiceLimits(**svc) for name, svc in services_raw.items()}
+        return root
 
     def load_pricing(self) -> dict[str, ModelPricing]:
         data = self._load(MODEL_PRICING_CONFIG_FILE)

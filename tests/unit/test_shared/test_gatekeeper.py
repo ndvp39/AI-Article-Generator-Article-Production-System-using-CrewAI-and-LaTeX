@@ -1,4 +1,5 @@
 import re
+import time
 from threading import Thread
 from unittest.mock import MagicMock, patch
 
@@ -268,3 +269,88 @@ def test_concurrent_calls_all_logged():
 
     assert errors == []
     assert len(gk.get_call_records()) == 10
+
+
+# ---------------------------------------------------------------------------
+# TPM throttling
+# ---------------------------------------------------------------------------
+
+def test_tpm_throttle_triggers_sleep_when_limit_exceeded():
+    gk = make_gk(requests_per_minute=1000, tokens_per_minute=100)
+    now = time.monotonic()
+    gk._token_window.append((now, 100))  # at limit
+
+    slept = []
+
+    def fake_sleep(d):
+        slept.append(d)
+        gk._token_window.clear()  # simulate time passing
+
+    with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=fake_sleep):
+        gk.execute(lambda: None)
+
+    assert len(slept) >= 1
+
+
+def test_tpm_zero_never_throttles():
+    gk = make_gk(requests_per_minute=1000, tokens_per_minute=0)
+    now = time.monotonic()
+    for _ in range(5):
+        gk._token_window.append((now, 1_000_000))  # huge tokens — ignored
+
+    slept = []
+    with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=lambda d: slept.append(d)):
+        gk.execute(lambda: None)
+
+    assert len(slept) == 0
+
+
+def test_successful_call_records_tokens_in_window():
+    gk = make_gk()
+    resp = MagicMock()
+    resp.usage = {"input_tokens": 50, "output_tokens": 100}
+    gk.execute(lambda: resp)
+    assert len(gk._token_window) == 1
+    assert gk._token_window[0][1] == 150
+
+
+# ---------------------------------------------------------------------------
+# 429 retry uses retry_after_seconds; other codes use exponential backoff
+# ---------------------------------------------------------------------------
+
+def test_429_uses_retry_after_seconds():
+    retry_after = 45
+    attempts = []
+
+    def flaky():
+        attempts.append(1)
+        if len(attempts) < 2:
+            err = Exception("rate limited")
+            err.status_code = 429
+            raise err
+        return "ok"
+
+    slept = []
+    with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=lambda d: slept.append(d)):
+        make_gk(max_retries=3, retry_after_seconds=retry_after).execute(flaky)
+
+    assert slept[0] == retry_after
+
+
+def test_non_429_uses_exponential_backoff():
+    attempts = []
+
+    def flaky():
+        attempts.append(1)
+        if len(attempts) < 2:
+            err = Exception("server error")
+            err.status_code = 503
+            raise err
+        return "ok"
+
+    slept = []
+    with patch("article_generator.shared.gatekeeper.time.sleep", side_effect=lambda d: slept.append(d)), \
+         patch("article_generator.shared.gatekeeper.random.uniform", return_value=0.0):
+        make_gk(max_retries=3, retry_after_seconds=99).execute(flaky)
+
+    assert slept[0] == 1.0  # 2**0 + 0.0, not retry_after_seconds=99

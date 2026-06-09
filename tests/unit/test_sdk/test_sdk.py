@@ -164,10 +164,10 @@ def test_compare_model_costs_returns_compare_models_result(mocks):
 # ---------------------------------------------------------------------------
 
 
-def test_init_creates_gatekeeper_with_default_limits(mocks):
+def test_init_creates_gatekeeper_with_provider_limits(mocks):
     ArticleGeneratorSDK()
-    rate_limits = mocks["config"].return_value.load_rate_limits.return_value
-    mocks["gatekeeper"].assert_called_once_with(rate_limits["default"])
+    provider_limits = mocks["config"].return_value.load_provider_limits.return_value
+    mocks["gatekeeper"].assert_called_once_with(provider_limits)
 
 
 def test_init_passes_gatekeeper_to_cost_tracker(mocks):

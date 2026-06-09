@@ -313,6 +313,7 @@
 | T-085 | Update `README.md` — final user manual | `HIGH` | `[ ]` | Developer | Installation, `uv sync`, `.env` setup, `uv run python src/main.py`, output locations, config guide |
 | T-086 | Update `docs/prompts_book.md` with all prompts used during development | `MED` | `[ ]` | Developer | Every significant LLM prompt logged with context, goal, output quality notes |
 | T-087 | Final review: verify all items in Project.md §5 Evaluation Criteria are met | `HIGH` | `[ ]` | Developer | All 4 criteria checked off: links clickable, BiDi correct, tables within margins, formulas compiled |
+| T-088 | Dynamic multi-provider/tier rate limiting — `LLM_TIER` env var + TPM throttle + 429 backoff | `HIGH` | `[x]` | Developer | `rate_limits.json` v1.01 with `providers.{claude,gemini}.{free,pro}`; `ServiceLimits.tokens_per_minute`; `load_provider_limits()`; TPM sliding window in `ApiGatekeeper`; 429 uses `retry_after_seconds`; 514 tests pass |
 
 ---
 

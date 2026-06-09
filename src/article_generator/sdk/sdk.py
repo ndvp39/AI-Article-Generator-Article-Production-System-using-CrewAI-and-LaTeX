@@ -1,9 +1,15 @@
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 
-from article_generator.constants import ARTICLE_MD_FILE, RESULTS_DIR
+from article_generator.constants import (
+    ARTICLE_MD_FILE,
+    DEFAULT_LLM_TIER,
+    LLM_PROVIDER_CLAUDE,
+    RESULTS_DIR,
+)
 from article_generator.services.cost_tracker import CostReport, CostTracker, CrossModelComparison
 from article_generator.services.crew_service import CrewService
 from article_generator.services.file_manager import FileManager
@@ -22,8 +28,10 @@ class ArticleGeneratorSDK:
         self._config_manager = ConfigManager(config_dir=Path(config_path).parent)
         self._crew_service = CrewService(config_manager=self._config_manager)
         self._file_manager = FileManager(base_dir=RESULTS_DIR)
-        limits = self._config_manager.load_rate_limits()
-        self._gatekeeper = ApiGatekeeper(limits["default"])
+        provider = os.environ.get("ACTIVE_LLM", LLM_PROVIDER_CLAUDE).lower()
+        tier = os.environ.get("LLM_TIER", DEFAULT_LLM_TIER).lower()
+        limits = self._config_manager.load_provider_limits(provider, tier)
+        self._gatekeeper = ApiGatekeeper(limits)
         self._cost_tracker = CostTracker(gatekeeper=self._gatekeeper)
 
     def generate_article(self, topic: str) -> ArticleResult:

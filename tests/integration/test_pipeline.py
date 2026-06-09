@@ -67,9 +67,7 @@ def sdk_mocks():
         m["config"].return_value.load_setup.return_value = {
             "agents": {"temperature": "0.7"}
         }
-        m["config"].return_value.load_rate_limits.return_value = {
-            "default": MagicMock()
-        }
+        m["config"].return_value.load_provider_limits.return_value = MagicMock()
         yield m
 
 

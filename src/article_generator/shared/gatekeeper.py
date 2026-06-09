@@ -26,6 +26,7 @@ class ApiGatekeeper:
         self._semaphore = Semaphore(limits.concurrent_max)
         self._minute_window: deque[float] = deque()
         self._hour_window: deque[float] = deque()
+        self._token_window: deque[tuple[float, int]] = deque()
         self._inflight = 0
         self._records: list[CallRecord] = []
 
@@ -57,9 +58,13 @@ class ApiGatekeeper:
                     self._minute_window.popleft()
                 while self._hour_window and now - self._hour_window[0] > 3600:
                     self._hour_window.popleft()
+                while self._token_window and now - self._token_window[0][0] > 60:
+                    self._token_window.popleft()
                 minute_ok = len(self._minute_window) < self._limits.requests_per_minute
                 hour_ok = len(self._hour_window) < self._limits.requests_per_hour
-                if minute_ok and hour_ok:
+                tpm = self._limits.tokens_per_minute
+                tpm_ok = tpm == 0 or sum(t for _, t in self._token_window) < tpm
+                if minute_ok and hour_ok and tpm_ok:
                     self._minute_window.append(now)
                     self._hour_window.append(now)
                     return
@@ -68,6 +73,8 @@ class ApiGatekeeper:
                     waits.append(60 - (now - self._minute_window[0]))
                 if not hour_ok:
                     waits.append(3600 - (now - self._hour_window[0]))
+                if not tpm_ok and self._token_window:
+                    waits.append(60 - (now - self._token_window[0][0]))
             time.sleep(max(0.1, min(waits)))
 
     def _run_with_retry(
@@ -87,7 +94,9 @@ class ApiGatekeeper:
                     self._log(agent_name, model, (0, 0), time.monotonic() - start, False)
                     raise ApiCallFailedError(str(exc)) from exc
                 if attempt < self._limits.max_retries:
-                    time.sleep(2**attempt + random.uniform(0, 1))
+                    delay = (self._limits.retry_after_seconds if code == 429
+                             else 2 ** attempt + random.uniform(0, 1))
+                    time.sleep(delay)
         self._log(agent_name, model, (0, 0), 0.0, False)
         raise ApiCallFailedError(f"Failed after {self._limits.max_retries} retries") from last_exc
 
@@ -110,6 +119,8 @@ class ApiGatekeeper:
         )
         with self._lock:
             self._records.append(record)
+            if ok:
+                self._token_window.append((time.monotonic(), tokens[0] + tokens[1]))
 
     def get_call_records(self) -> list[CallRecord]:
         with self._lock:

@@ -25,15 +25,29 @@ VALID_SETUP = {
 
 VALID_RATE_LIMITS = {
     "rate_limits": {
-        "version": "1.00",
+        "version": "1.01",
+        "providers": {
+            "claude": {
+                "free": {
+                    "requests_per_minute": 5,
+                    "tokens_per_minute": 20000,
+                    "requests_per_hour": 50,
+                    "concurrent_max": 2,
+                    "retry_after_seconds": 60,
+                    "max_retries": 3,
+                    "max_queue_depth": 10,
+                }
+            }
+        },
         "services": {
-            "default": {
-                "requests_per_minute": 30,
-                "requests_per_hour": 500,
-                "concurrent_max": 5,
-                "retry_after_seconds": 30,
-                "max_retries": 3,
-                "max_queue_depth": 50,
+            "serper": {
+                "requests_per_minute": 10,
+                "tokens_per_minute": 0,
+                "requests_per_hour": 100,
+                "concurrent_max": 2,
+                "retry_after_seconds": 10,
+                "max_retries": 2,
+                "max_queue_depth": 20,
             }
         },
     }
@@ -108,11 +122,11 @@ def test_load_setup_missing_agents_key_raises(tmp_path: Path) -> None:
 
 def test_load_rate_limits_returns_service_limits(config_dir: Path) -> None:
     result = ConfigManager(config_dir).load_rate_limits()
-    assert "default" in result
-    limits = result["default"]
+    assert "serper" in result
+    limits = result["serper"]
     assert isinstance(limits, ServiceLimits)
-    assert limits.requests_per_minute == 30
-    assert limits.max_queue_depth == 50
+    assert limits.requests_per_minute == 10
+    assert limits.max_queue_depth == 20
 
 
 def test_load_rate_limits_version_mismatch_raises(tmp_path: Path) -> None:
@@ -123,34 +137,44 @@ def test_load_rate_limits_version_mismatch_raises(tmp_path: Path) -> None:
 
 
 def test_load_rate_limits_missing_services_raises(tmp_path: Path) -> None:
-    bad = {"rate_limits": {"version": "1.00"}}
+    bad = {"rate_limits": {"version": "1.01", "providers": {}}}
     (tmp_path / "rate_limits.json").write_text(json.dumps(bad), encoding="utf-8")
     with pytest.raises(ConfigKeyError, match="services"):
         ConfigManager(tmp_path).load_rate_limits()
 
 
-def test_load_rate_limits_multiple_services(tmp_path: Path) -> None:
-    data = {
-        "rate_limits": {
-            "version": "1.00",
-            "services": {
-                "default": {
-                    "requests_per_minute": 30, "requests_per_hour": 500,
-                    "concurrent_max": 5, "retry_after_seconds": 30,
-                    "max_retries": 3, "max_queue_depth": 50,
-                },
-                "serper": {
-                    "requests_per_minute": 10, "requests_per_hour": 100,
-                    "concurrent_max": 2, "retry_after_seconds": 10,
-                    "max_retries": 2, "max_queue_depth": 20,
-                },
-            },
-        }
-    }
-    (tmp_path / "rate_limits.json").write_text(json.dumps(data), encoding="utf-8")
-    result = ConfigManager(tmp_path).load_rate_limits()
-    assert result["serper"].requests_per_minute == 10
-    assert result["serper"].max_retries == 2
+def test_load_rate_limits_tokens_per_minute_loaded(config_dir: Path) -> None:
+    result = ConfigManager(config_dir).load_rate_limits()
+    assert result["serper"].tokens_per_minute == 0
+
+
+# ---------------------------------------------------------------------------
+# load_provider_limits
+# ---------------------------------------------------------------------------
+
+def test_load_provider_limits_returns_service_limits(config_dir: Path) -> None:
+    limits = ConfigManager(config_dir).load_provider_limits("claude", "free")
+    assert isinstance(limits, ServiceLimits)
+    assert limits.requests_per_minute == 5
+    assert limits.tokens_per_minute == 20000
+    assert limits.retry_after_seconds == 60
+
+
+def test_load_provider_limits_unknown_provider_raises(config_dir: Path) -> None:
+    with pytest.raises(ConfigKeyError, match="gemini"):
+        ConfigManager(config_dir).load_provider_limits("gemini", "free")
+
+
+def test_load_provider_limits_unknown_tier_raises(config_dir: Path) -> None:
+    with pytest.raises(ConfigKeyError, match="pro"):
+        ConfigManager(config_dir).load_provider_limits("claude", "pro")
+
+
+def test_load_provider_limits_missing_providers_raises(tmp_path: Path) -> None:
+    bad = {"rate_limits": {"version": "1.01", "services": {}}}
+    (tmp_path / "rate_limits.json").write_text(json.dumps(bad), encoding="utf-8")
+    with pytest.raises(ConfigKeyError, match="providers"):
+        ConfigManager(tmp_path).load_provider_limits("claude", "free")
 
 
 # ---------------------------------------------------------------------------
