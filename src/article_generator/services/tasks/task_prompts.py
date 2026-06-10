@@ -79,7 +79,11 @@ _GRAPH_OUT = (
 _LATEX_DESC = (
     "Convert the reviewed Markdown article into a complete XeLaTeX .tex document "
     "with Hebrew as the MAIN language and English as secondary.\n"
-    "PREAMBLE (non-negotiable package order): fontspec, polyglossia "
+    "FONTS (non-negotiable — use exactly these, they are installed on the system): "
+    "\\setmainfont{Times New Roman}, \\setsansfont{Arial}, \\setmonofont{Courier New}, "
+    "\\newfontfamily\\hebrewfont{Arial}[Script=Hebrew]. "
+    "Do NOT use FreeSerif, FreeFont, Linux Libertine, or any other font.\n"
+    "PREAMBLE (non-negotiable package order): fontspec (with fonts above), polyglossia "
     "(\\setmainlanguage{hebrew}, \\setotherlanguage{english}), geometry, "
     "fancyhdr, graphicx, amsmath+amssymb, booktabs+tabularx, tikz, biblatex, "
     "hyperref, bidi (bidi MUST be last).\n"

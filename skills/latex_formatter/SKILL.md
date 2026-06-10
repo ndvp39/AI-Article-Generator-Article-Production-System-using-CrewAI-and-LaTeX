@@ -25,6 +25,9 @@ You are a LaTeX Typesetting Specialist. Convert the reviewed Markdown article (w
 ```latex
 \documentclass[12pt,a4paper]{article}
 \usepackage{fontspec}
+\setmainfont{Times New Roman}
+\setsansfont{Arial}
+\setmonofont{Courier New}
 \usepackage{polyglossia}
 \setmainlanguage{hebrew}
 \setotherlanguage{english}
