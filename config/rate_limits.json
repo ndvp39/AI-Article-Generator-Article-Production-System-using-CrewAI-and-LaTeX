@@ -9,7 +9,7 @@
           "requests_per_hour": 50,
           "concurrent_max": 2,
           "retry_after_seconds": 60,
-          "max_retries": 3,
+          "max_retries": 5,
           "max_queue_depth": 10
         },
         "pro": {
@@ -18,19 +18,19 @@
           "requests_per_hour": 1000,
           "concurrent_max": 10,
           "retry_after_seconds": 10,
-          "max_retries": 3,
+          "max_retries": 5,
           "max_queue_depth": 50
         }
       },
       "gemini": {
         "free": {
           "requests_per_minute": 15,
-          "tokens_per_minute": 32000,
-          "requests_per_hour": 100,
-          "concurrent_max": 3,
-          "retry_after_seconds": 45,
-          "max_retries": 3,
-          "max_queue_depth": 15
+          "tokens_per_minute": 1000000,
+          "requests_per_hour": 60,
+          "concurrent_max": 2,
+          "retry_after_seconds": 60,
+          "max_retries": 20,
+          "max_queue_depth": 10
         },
         "pro": {
           "requests_per_minute": 1000,
@@ -38,7 +38,7 @@
           "requests_per_hour": 50000,
           "concurrent_max": 50,
           "retry_after_seconds": 5,
-          "max_retries": 3,
+          "max_retries": 5,
           "max_queue_depth": 100
         }
       }

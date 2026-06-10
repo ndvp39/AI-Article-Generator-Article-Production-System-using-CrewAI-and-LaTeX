@@ -3,7 +3,7 @@
 
 **Course:** AI Agents — MSC Course  
 **Lecturer:** Dr. Yoram Segal  
-**Version:** 1.10 — Multi-Process Architecture  
+**Version:** 1.11 — Gemini Free Tier + Retry Hardening  
 
 ---
 
@@ -61,6 +61,7 @@ CLI (src/main.py)
 | `AgentProcessRunner` | `shared/process_runner.py` | Wraps one CrewAI agent in a `multiprocessing.Process`; agent initialised *inside* the subprocess |
 | `GatekeeperRouter` | `services/gatekeeper_router.py` | Daemon thread; validates `AgentMessage` schema; routes output → next input queue |
 | `Watchdog` | `services/watchdog.py` | Daemon thread; polls `is_alive()`; terminates timed-out processes; raises `AgentTimeoutError` |
+| `build_llm` / `_inject_retry` | `shared/llm_factory.py` | Returns a provider-specific LLM; injects exponential-backoff retry wrapper and trailing-assistant-message guard directly onto `llm.call` |
 | `AgentMessage` / `AgentStatus` | `shared/ipc_models.py` | Typed dataclasses for all IPC communication |
 | `CrewService` | `services/crew_service.py` | Thin wrapper — delegates to `ProcessOrchestrator` |
 | `ArticleGeneratorSDK` | `sdk/sdk.py` | Single public entry point; delegates everything to services |
@@ -88,11 +89,21 @@ The `GatekeeperRouter` intercepts every message, validates the schema, and raise
 
 ### Watchdog Behaviour
 
-The `Watchdog` polls every `WATCHDOG_POLL_INTERVAL_SECONDS` (default: 2 s):
+The `Watchdog` polls every `WATCHDOG_POLL_INTERVAL_SECONDS` (default: 1 s):
 
 - **Unexpected crash** — `process.is_alive()` returns `False` before the agent finishes: records `AgentStatus(status="error")`, pipeline fails fast.
-- **Timeout exceeded** — agent runs longer than `AGENT_TIMEOUT_SECONDS[role]`: calls `process.terminate()`, records `AgentStatus(status="timeout")`, raises `AgentTimeoutError`.
+- **Timeout exceeded** — agent runs longer than `AGENT_TIMEOUT_SECONDS[role]` (default **7200 s / 2 h**): calls `process.terminate()`, records `AgentStatus(status="timeout")`, raises `AgentTimeoutError`.
 - **Healthy** — all processes alive and within timeout: `Watchdog.all_healthy()` returns `True`.
+
+The 2-hour limit accommodates Gemini free-tier rate limiting: at 15 RPM, an agent making 30+ LLM calls may wait ~30 minutes in backoff sleep alone.
+
+### Retry Architecture
+
+`build_llm()` injects a retry wrapper directly onto `llm.call` inside each agent subprocess:
+
+- **Backoff:** 60 s → 120 s → 240 s → 300 s (cap) on every `429 RESOURCE_EXHAUSTED`.
+- **Max retries:** 20 per individual LLM call — prevents infinite loops when the daily quota is genuinely exhausted.
+- **Trailing-message guard:** if the messages list ends with `role=assistant` (a crewai internal mechanism that some providers reject), it is silently converted to `role=user` before the API call.
 
 ---
 
@@ -166,18 +177,21 @@ Copy-Item .env-example .env
 
 Edit `.env`:
 ```
-# LLM provider: "claude" or "gemini"
-ACTIVE_LLM=claude
+# LLM provider: "gemini" (default, free) or "claude" (requires paid credits)
+ACTIVE_LLM=gemini
 
-# Anthropic Claude (required when ACTIVE_LLM=claude)
-LLM_API_KEY=your_anthropic_api_key_here
-
-# Google Gemini (required when ACTIVE_LLM=gemini)
+# Google Gemini — free tier: 15 RPM, 1 500 RPD
+# Get key at: https://aistudio.google.com/app/apikey
 GEMINI_API_KEY=your_gemini_api_key_here
+
+# Anthropic Claude (only needed when ACTIVE_LLM=claude)
+LLM_API_KEY=your_anthropic_api_key_here
 
 # Serper — always required
 SERPER_API_KEY=your_serper_api_key_here
 ```
+
+> **Gemini free tier:** The pipeline uses 15-RPM-aware exponential backoff (60 s → 300 s cap, max 20 retries). Expect a full pipeline run to take **15–45 minutes** depending on rate limiting.
 
 > **Security:** `.env` is listed in `.gitignore`. Never commit it.
 
@@ -198,7 +212,7 @@ SERPER_API_KEY=your_serper_api_key_here
       "citation_style": "numeric"
     },
     "agents": {
-      "claude_model": "claude-sonnet-4-6",
+      "claude_model": "anthropic/claude-sonnet-4-6",
       "gemini_model": "gemini/gemini-2.0-flash",
       "temperature": 0.7,
       "max_tokens": 8192
@@ -226,16 +240,18 @@ Used by `CostTracker` to compute USD costs and cross-model comparisons.
 ### Switching LLM Provider
 
 ```
-# Claude (default)
-ACTIVE_LLM=claude
-LLM_API_KEY=your_anthropic_key
-
-# Gemini
+# Gemini (default — free tier available)
 ACTIVE_LLM=gemini
 GEMINI_API_KEY=your_gemini_key
+
+# Claude (requires paid credits)
+ACTIVE_LLM=claude
+LLM_API_KEY=your_anthropic_key
 ```
 
-Default models: `claude-sonnet-4-6` / `gemini/gemini-2.0-flash` (set in `constants.py`, overridable in `setup.json`).
+Default models: `gemini/gemini-2.0-flash` / `anthropic/claude-sonnet-4-6` (set in `constants.py`, overridable in `setup.json`).
+
+> **Note:** The `anthropic/` prefix in the Claude model ID is required — without it, the CrewAI LLM factory misidentifies the provider as OpenAI.
 
 ---
 
@@ -439,6 +455,12 @@ uv run ruff check src/ tests/
 
 ## Troubleshooting
 
+### `429 RESOURCE_EXHAUSTED` / agent runs very slowly
+Gemini free tier enforces 15 RPM. The retry wrapper backs off 60 s → 300 s automatically (up to 20 retries per call). If you consistently hit this, either wait and retry later, or upgrade to a Gemini API key with billing enabled.
+
+### `anthropic.BadRequestError: Your credit balance is too low`
+Anthropic billing issue when `ACTIVE_LLM=claude`. Add credits at [console.anthropic.com](https://console.anthropic.com) → Plans & Billing, or switch to `ACTIVE_LLM=gemini`.
+
 ### `SERPER_API_KEY environment variable not set`
 Ensure `.env` exists at the project root and contains `SERPER_API_KEY=...`. Run from the project root directory.
 
@@ -467,12 +489,14 @@ Increase `article.target_pages` in `config/setup.json` or adjust agent prompts i
 | Package | Purpose |
 |---------|---------|
 | `crewai` | Multi-agent orchestration framework |
-| `crewai[google-genai]` | Gemini LLM support via litellm |
 | `crewai-tools` | SerperDevTool, FileWriterTool, FileReadTool |
-| `anthropic` | Anthropic API client |
+| `anthropic` | Anthropic API client (used by crewai's native Anthropic provider) |
+| `google-generativeai` | Gemini API client (used by crewai's native Gemini provider) |
 | `matplotlib` | Programmatic graph generation |
 | `python-dotenv` | Load `.env` into environment |
 | `multiprocessing` | OS-level process isolation *(stdlib — no install needed)* |
+
+> **No LiteLLM required.** CrewAI's native providers (`AnthropicNativeLLM`, `GeminiNativeLLM`) are used directly. LiteLLM is not installed and `is_litellm=True` must not be passed.
 
 Dev dependencies: `pytest`, `pytest-cov`, `ruff`.
 

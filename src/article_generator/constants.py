@@ -55,17 +55,19 @@ MODEL_PRICING_CONFIG_VERSION = "1.00"
 # Multi-process IPC
 WATCHDOG_POLL_INTERVAL_SECONDS: float = 1.0
 IPC_QUEUE_TIMEOUT_SECONDS: float = 5.0
-DEFAULT_AGENT_TIMEOUT_SECONDS: int = 3600  # 1 h — enough for complex LLM tasks + 429 backoff cycles
+# 2 h per agent: Gemini free tier (15 RPM) can force 60 s waits between calls;
+# a complex agent making 30+ LLM calls needs ~30 min of pure backoff headroom.
+DEFAULT_AGENT_TIMEOUT_SECONDS: int = 7200
 
-# Per-agent timeouts (seconds) — 1 h per agent allows complex generation tasks and
-# multiple full _RetryingLLM backoff cycles while still catching true deadlocks
+# Per-agent timeouts (seconds) — 2 h each accommodates heavy Gemini free-tier
+# rate-limit backoff while still catching true deadlocks via Watchdog.
 AGENT_TIMEOUT_SECONDS: dict[str, int] = {
-    "researcher": 3600,
-    "writer": 3600,
-    "editor": 3600,
-    "graph_generator": 3600,
-    "latex_formatter": 3600,
-    "bidi_specialist": 3600,
+    "researcher": 7200,
+    "writer": 7200,
+    "editor": 7200,
+    "graph_generator": 7200,
+    "latex_formatter": 7200,
+    "bidi_specialist": 7200,
 }
 
 # LLM providers

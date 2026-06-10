@@ -94,7 +94,6 @@ def test_build_llm_injects_retry_into_call(patch_llm, monkeypatch):
     patch_llm.return_value.call = original_call
     from article_generator.shared.llm_factory import build_llm
     result = build_llm()
-    # After injection the call attribute must be a different callable
     assert result.call is not original_call
 
 
@@ -151,3 +150,74 @@ def test_call_with_retry_backoff_doubles_each_attempt():
     assert sleep_calls[0] == _BACKOFF_BASE
     assert sleep_calls[1] == _BACKOFF_BASE * 2
     assert sleep_calls[2] == _BACKOFF_BASE * 4
+
+
+def test_call_with_retry_gives_up_after_max_retries():
+    """After _BACKOFF_MAX_RETRIES rate-limit errors, the exception is re-raised."""
+    import article_generator.shared.llm_factory as factory_module
+    from article_generator.shared.llm_factory import _BACKOFF_MAX_RETRIES, _call_with_retry
+
+    call_count = [0]
+
+    def always_429(messages, *a, **kw):
+        call_count[0] += 1
+        raise Exception("429 RESOURCE_EXHAUSTED")
+
+    with patch.object(factory_module.time, "sleep"):
+        with pytest.raises(Exception, match="429"):
+            _call_with_retry(always_429, ["msg"])
+
+    # 1 initial attempt + _BACKOFF_MAX_RETRIES retry attempts
+    assert call_count[0] == _BACKOFF_MAX_RETRIES + 1
+
+
+# ---------------------------------------------------------------------------
+# _inject_retry — trailing assistant-role guard
+# ---------------------------------------------------------------------------
+
+
+def test_inject_retry_converts_trailing_assistant_message_to_user():
+    """A messages list ending with role=assistant must be corrected to role=user."""
+    import article_generator.shared.llm_factory as factory_module
+    from article_generator.shared.llm_factory import _inject_retry
+
+    captured = []
+
+    mock_llm = MagicMock()
+    mock_llm.call = lambda msgs, **kw: captured.append(msgs) or "response"
+
+    _inject_retry(mock_llm)
+
+    messages = [
+        {"role": "user", "content": "Do something"},
+        {"role": "assistant", "content": "Partial answer"},
+    ]
+    mock_llm.call(messages)
+
+    assert len(captured) == 1
+    assert captured[0][-1]["role"] == "user"
+    # Original list must not be mutated
+    assert messages[-1]["role"] == "assistant"
+
+
+def test_inject_retry_leaves_trailing_user_message_unchanged():
+    """A messages list already ending with role=user must not be modified."""
+    import article_generator.shared.llm_factory as factory_module
+    from article_generator.shared.llm_factory import _inject_retry
+
+    captured = []
+
+    mock_llm = MagicMock()
+    mock_llm.call = lambda msgs, **kw: captured.append(msgs) or "response"
+
+    _inject_retry(mock_llm)
+
+    messages = [
+        {"role": "user", "content": "Hello"},
+        {"role": "assistant", "content": "Hi"},
+        {"role": "user", "content": "Final question"},
+    ]
+    mock_llm.call(messages)
+
+    assert captured[0][-1]["role"] == "user"
+    assert captured[0][-1]["content"] == "Final question"
