@@ -10,7 +10,7 @@ _SKILLS_PATH = str(PROJECT_ROOT / "skills" / "latex_formatter")
 _ROLE = "LaTeX Typesetting Specialist"
 _GOAL = (
     "Convert the approved Markdown article into complete, compilable LaTeX "
-    "code ready for LuaLaTeX compilation"
+    "code ready for XeLaTeX compilation"
 )
 _BACKSTORY = (
     "You are a LaTeX expert who specialises in academic typesetting, "

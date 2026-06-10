@@ -72,7 +72,7 @@ class ArticleGeneratorSDK:
         return result
 
     def compile_pdf(self, tex_path: str, bib_path: str) -> CompilationResult:
-        """Compile an existing .tex file to PDF (4-pass LuaLaTeX + biber)."""
+        """Compile an existing .tex file to PDF (4-pass XeLaTeX + biber)."""
         logger.info("compile_pdf — tex: %s, bib: %s", tex_path, bib_path)
         return LaTeXCompiler().compile(tex_path, bib_path)
 

@@ -54,7 +54,7 @@ class ArticleConfig:
 
 @dataclass
 class CompilationResult:
-    """Outcome of a 4-pass LuaLaTeX + biber compilation run."""
+    """Outcome of a 4-pass XeLaTeX + biber compilation run."""
 
     success: bool
     passes_completed: int

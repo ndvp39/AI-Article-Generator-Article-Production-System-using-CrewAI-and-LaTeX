@@ -79,7 +79,7 @@ class LaTeXCompiler:
         return bib_content
 
     def compile(self, tex_path: str, bib_path: str) -> CompilationResult:
-        """Run 4-pass LuaLaTeX + biber pipeline; return CompilationResult."""
+        """Run 4-pass XeLaTeX + biber pipeline; return CompilationResult."""
         tex = Path(tex_path)
         if not tex.exists():
             raise FileNotFoundError(f"tex file not found: {tex}")
