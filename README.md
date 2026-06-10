@@ -3,7 +3,7 @@
 
 **Course:** AI Agents — MSC Course  
 **Lecturer:** Dr. Yoram Segal  
-**Version:** 1.12 — XeLaTeX Engine + Hebrew-Main + Auto-PDF + Subprocess Cost Tracking  
+**Version:** 1.13 — Hebrew Content Mandate + Graph Copy Fix + Graph in PDF  
 
 ---
 
@@ -23,6 +23,10 @@ The pipeline uses **6 specialized AI agents**, each running as an **isolated OS 
 | BiDiSpecialistAgent | Hebrew–English BiDi validation | FileReadTool, FileWriterTool | `multiprocessing.Process` |
 
 **Output:** `results/article.pdf` — a fully compiled academic PDF.
+
+## Sample Output
+
+📄 **[Download the generated article PDF](results/article.pdf)** — Multi-Agent Systems and Autonomous AI, compiled by the 6-agent pipeline (15 pages, XeLaTeX, Hebrew main language).
 
 ---
 
@@ -313,7 +317,7 @@ results/
 ├── article.tex              ← Generated LaTeX source
 ├── references.bib           ← Generated bibliography
 ├── article.pdf              ← Final compiled PDF (primary output)
-├── article.log              ← LuaLaTeX compilation log
+├── article.log              ← XeLaTeX compilation log
 ├── cost_report.json         ← Token usage and USD cost breakdown
 └── figures/
     └── graph.pdf            ← Programmatically generated graph
@@ -351,7 +355,6 @@ HW3/
 │       │   ├── watchdog.py                  ← Process health monitor + timeout (thread)
 │       │   ├── file_manager.py              ← File I/O (read/write Markdown, JSON)
 │       │   ├── latex_compiler.py            ← LaTeX generation + 4-pass compile
-│       │   ├── graph_runner.py              ← Subprocess graph execution
 │       │   └── cost_tracker.py              ← Token & USD cost analysis
 │       └── shared/
 │           ├── ipc_models.py                ← AgentMessage + AgentStatus dataclasses
@@ -450,6 +453,7 @@ uv run ruff check src/ tests/
 | BiDi text direction correct | Hebrew text reads right-to-left without corruption |
 | No table overflows page margins | All tables visible within page bounds |
 | All formulas compiled as LaTeX math | No formula appears as plain text (`sigma`, `integral`, etc.) |
+| Graph embedded in PDF | `results/figures/graph.pdf` present; visible figure in article body |
 
 ---
 
@@ -473,11 +477,11 @@ The writer produced no output — usually an LLM API error. Check `LLM_API_KEY`/
 ### Agent process died unexpectedly (`status="error"`)
 Check the console for the traceback from inside the subprocess. Common causes: missing API key inside the subprocess environment, serialisation error, out-of-memory.
 
-### `lualatex: command not found`
+### `xelatex: command not found`
 MiKTeX is not in PATH. Open a new terminal after installation, or add MiKTeX `bin/` to your PATH.
 
-### `FontNotFoundError: Hebrew font 'FrankRuhlCLM' not found`
-MiKTeX Console → Packages → search `frankruhlclm` → Install.
+### `Package fontspec Error: The font "Times New Roman" cannot be found`
+Required fonts are not installed. On Windows, Times New Roman, Arial, and Courier New ship with Microsoft Office and are normally present. If missing, install the [Microsoft Core Fonts](https://corefonts.sourceforge.net/) package.
 
 ### PDF is fewer than 15 pages
 Increase `article.target_pages` in `config/setup.json` or adjust agent prompts in `services/tasks/task_definitions.py`.

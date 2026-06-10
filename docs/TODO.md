@@ -324,6 +324,7 @@
 | T-096 | Update stale documentation — engine, language, BiDi agent contract | `MED` | `[x]` | Developer | `docs/PLAN.md`: LuaLaTeX→XeLaTeX in C4 diagrams, ADR-002, deployment diagram, API table, JSON schema; `docs/PRD_latex_pipeline.md`: engine choice, pass table, subprocess code, constraints; `docs/PRD_bidi.md`: pipeline order, constraint 5, scenario T-007, XeLaTeX references; `docs/prompts_book.md`: P-007 and P-008 updated with v2 prompts and refinement log |
 | T-097 | Fix writer output truncation — wire `max_tokens` through config → LLM and add explicit section structure | `HIGH` | `[x]` | Developer | `config/setup.json`: `max_tokens` 8192→16000; `llm_factory.py`: `build_llm()` accepts and passes `max_tokens` to `LLM(…)` for both Claude and Gemini; `process_orchestrator.py`: extracts `max_tokens` from `config["agents"]` and adds to `llm_kwargs`; `task_prompts.py` `_WRITE_DESC`: 9-section numbered checklist with per-section word minimums (Abstract 400, Introduction 1000, 4×Chapter 1200, Conclusion 600) and hard anti-truncation rule; word target 12,000→8,000 (achievable in 16K tokens; ≥15 pages verified); `skills/writer/SKILL.md` v1.2.0; `README.md` config example updated; 526 tests pass |
 | T-098 | Fix Hebrew content mandate — writer prompt must produce Hebrew Unicode prose + remove `\setLR` from LaTeX formatter | `HIGH` | `[x]` | Developer | `task_prompts.py` `_WRITE_DESC`: added LANGUAGE block with Hebrew Unicode examples (`מערכות רב-סוכניות...`), Hebrew section names (## תקציר, ## הקדמה, ## מסקנות), explicit prohibition on English sentences and LaTeX commands in Markdown; `_LATEX_DESC`: removed `\setLR` instruction (it forced LTR globally, breaking RTL Hebrew layout); `skills/writer/SKILL.md` v1.3.0: concrete Hebrew examples added; `skills/latex_formatter/SKILL.md`: removed step 7 `\setLR`; `results/article.tex` patched: `\setmainlanguage{english}` + `\setotherlanguage{hebrew}` (current run content is English — next run will produce Hebrew) |
+| T-099 | Fix graph never reaching `results/figures/` — `LocalCodeInterpreterTool` ran in temp dir and graph was lost | `HIGH` | `[x]` | Developer | `code_interpreter_tool.py`: added `shutil.copy2()` loop to copy all produced files from temp `figures/` to `RESULTS_DIR/FIGURES_DIR/` after successful execution; `README.md` v1.13: added PDF download link, fixed stale `graph_runner.py` reference, `lualatex→xelatex` in troubleshooting, font error message updated; `docs/PRD_graph_generation.md` REQ-GRAPH-10 updated to describe copy behavior; fallback `results/figures/graph.pdf` generated for current article |
 
 ---
 
@@ -342,8 +343,8 @@
 | 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 8 | 0 | 0 |
 | 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 6 | 0 | 0 |
 | 8 | M8 pre — Cost Tracking | T-068 to T-073 | 6 | 0 | 0 |
-| 9 | M8 — Integration & QA | T-074 to T-098 | 25 | 0 | 0 |
-| **Total** | | **134 tasks** | **134** | **0** | **0** |
+| 9 | M8 — Integration & QA | T-074 to T-099 | 26 | 0 | 0 |
+| **Total** | | **135 tasks** | **135** | **0** | **0** |
 
 ---
 

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -8,7 +9,7 @@ from pathlib import Path
 from crewai.tools import BaseTool
 from pydantic import BaseModel, Field
 
-from article_generator.constants import GRAPH_TIMEOUT_SECONDS
+from article_generator.constants import FIGURES_DIR, GRAPH_TIMEOUT_SECONDS, RESULTS_DIR
 
 
 class _CodeInput(BaseModel):
@@ -63,6 +64,11 @@ class LocalCodeInterpreterTool(BaseTool):
             if produced:
                 names = ", ".join(f.name for f in produced)
                 parts.append(f"FILES PRODUCED: figures/{names}")
+                dest_dir = RESULTS_DIR / FIGURES_DIR
+                dest_dir.mkdir(parents=True, exist_ok=True)
+                for f in produced:
+                    shutil.copy2(str(f), str(dest_dir / f.name))
+                parts.append(f"SAVED TO: {dest_dir}")
             else:
                 parts.append("FILES PRODUCED: none")
 

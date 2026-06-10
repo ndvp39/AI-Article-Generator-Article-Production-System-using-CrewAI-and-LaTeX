@@ -133,7 +133,7 @@ The `GraphGeneratorAgent` MUST output **executable Python code** as a string. Th
 `LaTeXCompiler` (or `GraphRunner`) MUST execute the Python code produced by `GraphGeneratorAgent` in an isolated subprocess and verify the output file was created.
 
 **REQ-GRAPH-10: Figures Directory**
-All graph files MUST be saved to `results/figures/`. The directory MUST be created if it does not exist.
+All graph files MUST be saved to `results/figures/`. The directory MUST be created if it does not exist. `LocalCodeInterpreterTool` runs graph code in a temporary directory, then automatically copies any files from `figures/` to `results/figures/` before the temp dir is cleaned up.
 
 ### 2.2 Non-Functional Requirements
 
