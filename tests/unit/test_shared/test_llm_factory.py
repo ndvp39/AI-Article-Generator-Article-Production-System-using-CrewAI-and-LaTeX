@@ -178,7 +178,6 @@ def test_call_with_retry_gives_up_after_max_retries():
 
 def test_inject_retry_converts_trailing_assistant_message_to_user():
     """A messages list ending with role=assistant must be corrected to role=user."""
-    import article_generator.shared.llm_factory as factory_module
     from article_generator.shared.llm_factory import _inject_retry
 
     captured = []
@@ -202,7 +201,6 @@ def test_inject_retry_converts_trailing_assistant_message_to_user():
 
 def test_inject_retry_leaves_trailing_user_message_unchanged():
     """A messages list already ending with role=user must not be modified."""
-    import article_generator.shared.llm_factory as factory_module
     from article_generator.shared.llm_factory import _inject_retry
 
     captured = []

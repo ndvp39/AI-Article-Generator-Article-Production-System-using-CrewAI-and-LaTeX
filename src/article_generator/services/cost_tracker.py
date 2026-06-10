@@ -7,6 +7,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from article_generator.constants import CONFIG_DIR, MODEL_PRICING_CONFIG_FILE, RESULTS_DIR
+from article_generator.services.agent_cost_log import load_subprocess_records
 from article_generator.services.cost_models import (
     AgentCostEntry,
     CostReport,
@@ -15,8 +16,6 @@ from article_generator.services.cost_models import (
 )
 from article_generator.shared.gatekeeper import ApiGatekeeper
 from article_generator.shared.gatekeeper_models import CallRecord
-
-_AGENT_COSTS_DIR = RESULTS_DIR / "agent_costs"
 
 logger = logging.getLogger(__name__)
 
@@ -36,37 +35,10 @@ class CostTracker:
             pricing_path or CONFIG_DIR / MODEL_PRICING_CONFIG_FILE
         )
 
-    @staticmethod
-    def _load_subprocess_records() -> list[CallRecord]:
-        """Read per-call token records written by agent subprocesses."""
-        records: list[CallRecord] = []
-        if not _AGENT_COSTS_DIR.exists():
-            return records
-        for jsonl_path in _AGENT_COSTS_DIR.glob("*.jsonl"):
-            try:
-                for line in jsonl_path.read_text(encoding="utf-8").splitlines():
-                    line = line.strip()
-                    if not line:
-                        continue
-                    data = json.loads(line)
-                    records.append(CallRecord(
-                        call_id=f"subprocess-{len(records)}",
-                        agent_name=data.get("agent_name", ""),
-                        model=data.get("model", ""),
-                        input_tokens=int(data.get("input_tokens", 0)),
-                        output_tokens=int(data.get("output_tokens", 0)),
-                        timestamp=str(data.get("timestamp", "")),
-                        duration_seconds=0.0,
-                        success=True,
-                    ))
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("CostTracker: failed to parse %s: %s", jsonl_path, exc)
-        return records
-
     def generate_report(self) -> CostReport:
         """Return a full CostReport aggregated from all current call records."""
         # Merge main-process records (gatekeeper) with subprocess records (agent_costs/).
-        records = self._gatekeeper.get_call_records() + self._load_subprocess_records()
+        records = self._gatekeeper.get_call_records() + load_subprocess_records()
         by_agent: dict[tuple[str, str], AgentCostEntry] = {}
         by_model: dict[str, ModelCostEntry] = {}
         for rec in records:
@@ -119,7 +91,7 @@ class CostTracker:
     ) -> CrossModelComparison:
         """Project token totals onto each model's pricing; return CrossModelComparison."""
         if total_input_tokens is None or total_output_tokens is None:
-            recs = self._gatekeeper.get_call_records() + self._load_subprocess_records()
+            recs = self._gatekeeper.get_call_records() + load_subprocess_records()
             total_input_tokens, total_output_tokens = (
                 sum(r.input_tokens for r in recs), sum(r.output_tokens for r in recs)
             )
@@ -145,7 +117,7 @@ class CostTracker:
 
     def check_budget_alert(self, threshold_usd: float) -> bool:
         """Return True if total cost ≥ threshold_usd; log WARNING if so."""
-        all_records = self._gatekeeper.get_call_records() + self._load_subprocess_records()
+        all_records = self._gatekeeper.get_call_records() + load_subprocess_records()
         total = sum(self._cost_for_record(r) for r in all_records)
         if total >= threshold_usd:
             logger.warning(

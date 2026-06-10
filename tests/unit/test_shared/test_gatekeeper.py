@@ -1,5 +1,4 @@
 import re
-import time
 from threading import Thread
 from unittest.mock import MagicMock, patch
 

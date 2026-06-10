@@ -168,8 +168,7 @@ class ProcessOrchestrator:
 
         logger.info("ProcessOrchestrator pipeline complete")
         return ArticleResult(
-            success=True,
-            markdown_content=final_msg.content,
+            success=True, markdown_content=final_msg.content,
             tex_path=str(RESULTS_DIR / ARTICLE_TEX_FILE),
             bib_path=str(RESULTS_DIR / REFERENCES_BIB_FILE),
             pdf_path=str(RESULTS_DIR / ARTICLE_PDF_FILE),

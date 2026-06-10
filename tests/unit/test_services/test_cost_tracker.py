@@ -18,7 +18,7 @@ from article_generator.shared.gatekeeper_models import CallRecord
 @pytest.fixture(autouse=True)
 def _no_subprocess_records():
     """Prevent tests from reading real results/agent_costs/ files on disk."""
-    with patch.object(CostTracker, "_load_subprocess_records", staticmethod(lambda: [])):
+    with patch("article_generator.services.cost_tracker.load_subprocess_records", return_value=[]):
         yield
 
 

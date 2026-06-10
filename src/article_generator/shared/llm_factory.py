@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-import json
 import logging
 import os
 import time
-from pathlib import Path
 from typing import Any
 
 from crewai import LLM
@@ -14,8 +12,8 @@ from article_generator.constants import (
     DEFAULT_GEMINI_MODEL,
     LLM_PROVIDER_CLAUDE,
     LLM_PROVIDERS_SUPPORTED,
-    RESULTS_DIR,
 )
+from article_generator.services.agent_cost_log import append_cost_record, estimate_tokens
 
 logger = logging.getLogger(__name__)
 
@@ -67,32 +65,6 @@ def _call_with_retry(call_fn, messages, *args, **kwargs) -> Any:
             raise
 
 
-_AGENT_COSTS_DIR = RESULTS_DIR / "agent_costs"
-
-
-def _estimate_tokens(text: str) -> int:
-    """Rough token estimate: 1 token ≈ 4 characters."""
-    return max(1, len(text) // 4)
-
-
-def _append_cost_record(agent_name: str, model: str, input_tokens: int, output_tokens: int) -> None:
-    """Append one call record to results/agent_costs/<agent_name>.jsonl."""
-    try:
-        _AGENT_COSTS_DIR.mkdir(parents=True, exist_ok=True)
-        record = {
-            "agent_name": agent_name,
-            "model": model,
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "timestamp": time.time(),
-        }
-        path = _AGENT_COSTS_DIR / f"{agent_name}.jsonl"
-        with path.open("a", encoding="utf-8") as fh:
-            fh.write(json.dumps(record) + "\n")
-    except Exception as exc:  # noqa: BLE001
-        logger.debug("_append_cost_record failed: %s", exc)
-
-
 def _inject_retry(llm: Any, agent_name: str = "", model: str = "") -> None:
     """Replace llm.call in-place with a 429-retrying version.
 
@@ -126,10 +98,10 @@ def _inject_retry(llm: Any, agent_name: str = "", model: str = "") -> None:
                 for m in (messages or [])
             )
             output_text = response if isinstance(response, str) else str(response or "")
-            _append_cost_record(
+            append_cost_record(
                 agent_name, model,
-                _estimate_tokens(input_text),
-                _estimate_tokens(output_text),
+                estimate_tokens(input_text),
+                estimate_tokens(output_text),
             )
         return response
 

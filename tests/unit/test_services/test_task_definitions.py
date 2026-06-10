@@ -35,6 +35,27 @@ def test_write_desc_contains_topic_placeholder():
     assert "{topic}" in _WRITE_DESC
 
 
+def test_write_desc_requires_hebrew_language():
+    from article_generator.services.tasks.task_definitions import _WRITE_DESC
+    assert "Hebrew" in _WRITE_DESC
+
+
+def test_write_desc_requires_minimum_word_count():
+    from article_generator.services.tasks.task_definitions import _WRITE_DESC
+    assert "12,000" in _WRITE_DESC
+
+
+def test_latex_desc_requires_xelatex_and_hebrew_main():
+    from article_generator.services.tasks.task_definitions import _LATEX_DESC
+    assert "XeLaTeX" in _LATEX_DESC or "xelatex" in _LATEX_DESC.lower()
+    assert "setmainlanguage{hebrew}" in _LATEX_DESC
+
+
+def test_bidi_desc_requires_confirmation_only_output():
+    from article_generator.services.tasks.task_definitions import _BIDI_DESC
+    assert "FileReadTool" in _BIDI_DESC or "FileWriterTool" in _BIDI_DESC
+
+
 def test_review_desc_does_not_require_topic():
     from article_generator.services.tasks.task_definitions import _REVIEW_DESC
     assert isinstance(_REVIEW_DESC, str) and len(_REVIEW_DESC) > 0
