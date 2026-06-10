@@ -288,3 +288,63 @@ def test_subprocess_error_message_contains_traceback():
     err_msg: AgentMessage = q_out.get(timeout=2.0)
     assert "Traceback" in err_msg.content
     assert "bad config" in err_msg.content
+
+
+# ---------------------------------------------------------------------------
+# _agent_subprocess — upstream error short-circuit
+# ---------------------------------------------------------------------------
+
+def test_subprocess_propagates_upstream_error_without_llm_work():
+    """When the input message is already an error, no LLM is built and the
+    error is forwarded immediately to the output queue."""
+    q_in, q_out = Queue(), Queue()
+    q_in.put(AgentMessage(
+        sender="researcher", recipient="writer",
+        content="upstream crash traceback", topic="AI",
+        message_type="error",
+    ))
+
+    mocks = _mock_crewai_and_llm()
+    with patch.dict(sys.modules, mocks):
+        _agent_subprocess(
+            agent_cls=_FakeAgentCls,
+            task_description="Write {topic}",
+            expected_output="Article",
+            in_queue=q_in,
+            out_queue=q_out,
+            agent_name="writer",
+            llm_kwargs={},
+        )
+
+    out_msg: AgentMessage = q_out.get(timeout=2.0)
+    assert out_msg.message_type == "error"
+    assert out_msg.content == "upstream crash traceback"
+    assert out_msg.topic == "AI"
+    # No LLM or Crew was created
+    assert mocks["article_generator.shared.llm_factory"].build_llm.call_count == 0
+    assert mocks["crewai"].Crew.call_count == 0
+
+
+def test_subprocess_upstream_error_preserves_content_and_topic():
+    q_in, q_out = Queue(), Queue()
+    q_in.put(AgentMessage(
+        sender="writer", recipient="editor",
+        content="something went wrong", topic="Climate",
+        message_type="error",
+    ))
+
+    with patch.dict(sys.modules, _mock_crewai_and_llm()):
+        _agent_subprocess(
+            agent_cls=_FakeAgentCls,
+            task_description="Edit {topic}",
+            expected_output="Edited",
+            in_queue=q_in,
+            out_queue=q_out,
+            agent_name="editor",
+            llm_kwargs={},
+        )
+
+    out_msg: AgentMessage = q_out.get(timeout=2.0)
+    assert out_msg.content == "something went wrong"
+    assert out_msg.topic == "Climate"
+    assert out_msg.sender == "editor"

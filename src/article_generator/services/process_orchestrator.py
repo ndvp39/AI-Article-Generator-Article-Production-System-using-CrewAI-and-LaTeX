@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import queue as queue_module
+import time
 from multiprocessing import Queue
 
 import article_generator.services.tasks.task_definitions as _td
@@ -122,20 +123,30 @@ class ProcessOrchestrator:
         )
         logger.info("Initial message injected for researcher")
 
-        # 6. Block on final output from bidi specialist's output queue.
-        # total_timeout = sum of all per-agent timeouts + 60s buffer.
+        # 6. Poll final output queue every second so watchdog/router failures
+        # are detected quickly instead of blocking for up to 43 260 s.
         total_timeout = sum(
             AGENT_TIMEOUT_SECONDS.get(spec[3], DEFAULT_AGENT_TIMEOUT_SECONDS)
             for spec in _PIPELINE_SPEC
         ) + 60
-        try:
-            final_msg: AgentMessage = self._pipeline[_N_AGENTS - 1][1].get(
-                timeout=total_timeout
-            )
-        except queue_module.Empty:
-            self._raise_pipeline_error(
-                f"timed out waiting for final output after {total_timeout}s"
-            )
+        deadline = time.monotonic() + total_timeout
+        while True:
+            try:
+                final_msg: AgentMessage = self._pipeline[_N_AGENTS - 1][1].get(
+                    timeout=1.0
+                )
+                break
+            except queue_module.Empty:
+                if time.monotonic() >= deadline:
+                    self._raise_pipeline_error(
+                        f"timed out waiting for final output after {total_timeout}s"
+                    )
+                if self._watchdog and not self._watchdog.all_healthy():
+                    self._raise_pipeline_error("an agent crashed or timed out")
+                if self._router and self._router.last_error:
+                    self._raise_pipeline_error(
+                        f"GatekeeperRouter validation error: {self._router.last_error}"
+                    )
 
         # 7. Shutdown cleanly
         self._shutdown()

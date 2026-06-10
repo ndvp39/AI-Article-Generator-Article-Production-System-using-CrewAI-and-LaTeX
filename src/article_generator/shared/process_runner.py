@@ -34,6 +34,19 @@ def _agent_subprocess(
         # Timeout=None → Watchdog handles the wall-clock limit by terminating us.
         in_msg: AgentMessage = in_queue.get(timeout=None)
 
+        # Propagate upstream errors immediately without doing any LLM work.
+        if in_msg.message_type == "error":
+            out_queue.put(
+                AgentMessage(
+                    sender=agent_name,
+                    recipient="",
+                    content=in_msg.content,
+                    topic=in_msg.topic,
+                    message_type="error",
+                )
+            )
+            return
+
         llm = build_llm(**llm_kwargs)
         agent = agent_cls(llm=llm).build()
 
