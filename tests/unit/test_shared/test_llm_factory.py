@@ -55,6 +55,14 @@ def test_build_llm_passes_temperature(patch_llm, monkeypatch):
     assert patch_llm.call_args.kwargs["temperature"] == 0.3
 
 
+def test_build_llm_passes_max_tokens(patch_llm, monkeypatch):
+    monkeypatch.setenv("ACTIVE_LLM", "claude")
+    monkeypatch.setenv("LLM_API_KEY", "sk-key")
+    from article_generator.shared.llm_factory import build_llm
+    build_llm(max_tokens=16000)
+    assert patch_llm.call_args.kwargs["max_tokens"] == 16000
+
+
 def test_build_llm_raises_on_unsupported_provider(monkeypatch):
     monkeypatch.setenv("ACTIVE_LLM", "openai")
     from article_generator.shared.llm_factory import build_llm

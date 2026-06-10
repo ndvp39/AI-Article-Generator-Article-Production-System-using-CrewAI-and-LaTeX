@@ -309,7 +309,7 @@
 | T-081 | **Evaluation criterion check:** BiDi text direction correct throughout | `HIGH` | `[x]` | Developer | Hebrew text renders RTL, English renders LTR; no garbled characters or direction corruption |
 | T-082 | **Evaluation criterion check:** No table overflows page margins | `HIGH` | `[x]` | Developer | Visual inspection of all tables in PDF confirms no content cut off at margins |
 | T-083 | **Evaluation criterion check:** All formulas compiled as LaTeX math (not plain text) | `HIGH` | `[x]` | Developer | All formulas render with proper mathematical typesetting; no formula appears as plain `sigma` or `integral` text |
-| T-084 | Full run with real API keys; validate final PDF quality | `HIGH` | `[ ]` | Developer | PDF is ≥ 15 pages; cover sheet complete; all visual elements present; BiDi correct; bibliography linked |
+| T-084 | Full run with real API keys; validate final PDF quality | `HIGH` | `[~]` | Developer | PDF is ≥ 15 pages; cover sheet complete; all visual elements present; BiDi correct; bibliography linked |
 | T-085 | Update `README.md` — final user manual | `HIGH` | `[x]` | Developer | Installation, `uv sync`, `.env` setup, `uv run python src/main.py`, output locations, config guide |
 | T-086 | Update `docs/prompts_book.md` with all prompts used during development | `MED` | `[x]` | Developer | Every significant LLM prompt logged with context, goal, output quality notes; all 8 agent prompts documented with refinement log entries |
 | T-087 | Final review: verify all items in Project.md §5 Evaluation Criteria are met | `HIGH` | `[ ]` | Developer | All 4 criteria checked off: links clickable, BiDi correct, tables within margins, formulas compiled |
@@ -317,11 +317,12 @@
 | T-089 | Reactive infinite exponential backoff — remove predictive RPM/TPM counting from `ApiGatekeeper`; 429 → 5s→10s→20s→...→300s infinite retry; bump all `AGENT_TIMEOUT_SECONDS` to 900 | `HIGH` | `[x]` | Developer | `gatekeeper.py` has no sliding windows; 429 retries infinitely with doubling backoff; `DEFAULT_AGENT_TIMEOUT_SECONDS=900`; all per-agent timeouts=900; 3 new backoff tests added; all tests pass |
 | T-090 | Fix orchestrator hang + error propagation — polling loop + error short-circuit | `HIGH` | `[x]` | Developer | ProcessOrchestrator uses 1s polling with watchdog health check; `_agent_subprocess` short-circuits upstream errors; 2 new process_runner tests added |
 | T-091 | Switch LaTeX engine from LuaLaTeX → XeLaTeX — `bidi` package requires XeTeX | `HIGH` | `[x]` | Developer | `LATEX_ENGINE="xelatex"` in constants.py + setup.json; `_run_lualatex` renamed to `_run_latex_engine`; all test skip-conditions updated lualatex→xelatex; integration test `test_config_latex_engine_is_lualatex` renamed to `test_config_latex_engine_is_xelatex` |
-| T-092 | Hebrew as MAIN language — update writer/editor/latex/bidi task prompts | `HIGH` | `[x]` | Developer | `_WRITE_DESC/OUT` require ≥90% Hebrew prose + ≥12,000 words; `_REVIEW_DESC` preserves Hebrew; `_LATEX_DESC` uses `\setmainlanguage{hebrew}`; `_BIDI_DESC` outputs confirmation only; `skills/latex_formatter/SKILL.md` updated to XeLaTeX + Hebrew-main |
+| T-092 | Hebrew as MAIN language — update writer/editor/latex/bidi task prompts | `HIGH` | `[x]` | Developer | `_WRITE_DESC/OUT` require ≥90% Hebrew prose + ≥8,000 words (revised T-097); `_REVIEW_DESC` preserves Hebrew; `_LATEX_DESC` uses `\setmainlanguage{hebrew}`; `_BIDI_DESC` outputs confirmation only; `skills/latex_formatter/SKILL.md` updated to XeLaTeX + Hebrew-main |
 | T-093 | Auto-compile PDF from within `generate_article()` — no manual step needed | `HIGH` | `[x]` | Developer | `ArticleGeneratorSDK.generate_article()` checks for `results/article.tex` after pipeline, auto-calls `compile_pdf()`; result.pdf_path set on success; unit test mocks LaTeXCompiler |
 | T-094 | Subprocess cost tracking — `build_llm()` writes per-call token estimates to `results/agent_costs/` | `HIGH` | `[x]` | Developer | `build_llm(agent_name=...)` parameter added; `_inject_retry` writes JSONL records to `results/agent_costs/<agent>.jsonl`; `CostTracker._load_subprocess_records()` merges them into reports; unit tests patch `_load_subprocess_records` to return `[]` |
 | T-095 | Fix BiDi language injection — remove "add if missing" and "MUST exist `\begin{hebrew}`" constraints from bidi agent | `HIGH` | `[x]` | Developer | `skills/bidi_specialist/SKILL.md` v1.1.0: removed "add if missing" and "At least one `\begin{hebrew}` block MUST exist"; added "MUST NOT add, inject, create, or translate any article content"; `_BIDI_DESC` in `task_prompts.py` updated with explicit DO NOT rules; `_BIDI_OUT` updated |
 | T-096 | Update stale documentation — engine, language, BiDi agent contract | `MED` | `[x]` | Developer | `docs/PLAN.md`: LuaLaTeX→XeLaTeX in C4 diagrams, ADR-002, deployment diagram, API table, JSON schema; `docs/PRD_latex_pipeline.md`: engine choice, pass table, subprocess code, constraints; `docs/PRD_bidi.md`: pipeline order, constraint 5, scenario T-007, XeLaTeX references; `docs/prompts_book.md`: P-007 and P-008 updated with v2 prompts and refinement log |
+| T-097 | Fix writer output truncation — wire `max_tokens` through config → LLM and add explicit section structure | `HIGH` | `[x]` | Developer | `config/setup.json`: `max_tokens` 8192→16000; `llm_factory.py`: `build_llm()` accepts and passes `max_tokens` to `LLM(…)` for both Claude and Gemini; `process_orchestrator.py`: extracts `max_tokens` from `config["agents"]` and adds to `llm_kwargs`; `task_prompts.py` `_WRITE_DESC`: 9-section numbered checklist with per-section word minimums (Abstract 400, Introduction 1000, 4×Chapter 1200, Conclusion 600) and hard anti-truncation rule; word target 12,000→8,000 (achievable in 16K tokens; ≥15 pages verified); `skills/writer/SKILL.md` v1.2.0; `README.md` config example updated; 526 tests pass |
 
 ---
 
@@ -331,14 +332,17 @@
 |-------|-----------|-------|------|-------------|-------------|
 | 1 | M1 — Documentation | T-001 to T-013 + T-011b + T-011c | 15 | 0 | 0 |
 | 2 | M2 — Project Skeleton | T-014 to T-024 | 11 | 0 | 0 |
-| 3 | M3 — Core Agents | T-025 to T-040 | 14 | 0 | 2 |
-| 4 | M4 — Content Pipeline | T-041 to T-047 | 0 | 0 | 7 |
+| 2.5 | Dual-LLM Architecture | T-A01 to T-A08 | 8 | 0 | 0 |
+| 3 | M3 — Core Agents | T-025 to T-040 | 16 | 0 | 0 |
+| 3.5 | Multi-Process Architecture | T-C01 to T-C19 | 19 | 0 | 0 |
+| Lang | Language Config (Hebrew main) | T-L01 to T-L09 | 9 | 0 | 0 |
+| 4 | M4 — Content Pipeline | T-041 to T-047 | 7 | 0 | 0 |
 | 5 | M5 — Visual Elements | T-048 to T-053 | 6 | 0 | 0 |
-| 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 4 | 0 | 4 |
-| 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 0 | 0 | 6 |
+| 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 8 | 0 | 0 |
+| 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 6 | 0 | 0 |
 | 8 | M8 pre — Cost Tracking | T-068 to T-073 | 6 | 0 | 0 |
-| 9 | M8 — Integration & QA | T-074 to T-087 | 0 | 0 | 14 |
-| **Total** | | **89 tasks** | **40** | **0** | **49** |
+| 9 | M8 — Integration & QA | T-074 to T-097 | 22 | 1 | 1 |
+| **Total** | | **133 tasks** | **131** | **1** | **1** |
 
 ---
 

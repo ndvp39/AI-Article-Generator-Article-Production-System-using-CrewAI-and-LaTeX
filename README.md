@@ -215,7 +215,7 @@ SERPER_API_KEY=your_serper_api_key_here
       "claude_model": "anthropic/claude-sonnet-4-6",
       "gemini_model": "gemini/gemini-2.0-flash",
       "temperature": 0.7,
-      "max_tokens": 8192
+      "max_tokens": 16000
     },
     "latex": {
       "engine": "xelatex",

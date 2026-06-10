@@ -1,8 +1,8 @@
 ---
 name: "Academic Writing Skill"
-description: "Transforms a research outline into a complete ≥15-page (≥12,000 words) Hebrew-main Markdown academic article with all required structural elements."
+description: "Transforms a research outline into a complete ≥15-page (≥8,000 words) Hebrew-main Markdown academic article with all required structural elements."
 author: "AI Article Generator — HW3, Dr. Yoram Segal"
-version: "1.1.0"
+version: "1.2.0"
 ---
 
 ## Role
@@ -25,7 +25,7 @@ You are an experienced Academic Article Writer. Transform the Researcher's outli
 | `## Introduction` | Present, in Hebrew |
 | `## Conclusion` | Present, in Hebrew |
 | Body chapters (`## `) | ≥ 4, all in Hebrew |
-| Total word count | ≥ 12,000 words |
+| Total word count | ≥ 8,000 words |
 | Markdown table (`\| col \|`) | ≥ 1 |
 | Formula (`$$` or `<!-- FORMULA`) | ≥ 1 |
 | Graph placeholder (`[GRAPH:`) | ≥ 1 |

@@ -42,7 +42,7 @@ def test_write_desc_requires_hebrew_language():
 
 def test_write_desc_requires_minimum_word_count():
     from article_generator.services.tasks.task_definitions import _WRITE_DESC
-    assert "12,000" in _WRITE_DESC
+    assert "8,000" in _WRITE_DESC
 
 
 def test_latex_desc_requires_xelatex_and_hebrew_main():

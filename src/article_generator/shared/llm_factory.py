@@ -108,7 +108,7 @@ def _inject_retry(llm: Any, agent_name: str = "", model: str = "") -> None:
     llm.call = _retry_call
 
 
-def build_llm(temperature: float = 0.7, agent_name: str = "") -> Any:
+def build_llm(temperature: float = 0.7, max_tokens: int = 16000, agent_name: str = "") -> Any:
     """Return a rate-limit-resilient LLM based on the ACTIVE_LLM env variable.
 
     ACTIVE_LLM=gemini  →  uses GEMINI_API_KEY + gemini/gemini-2.0-flash  (default)
@@ -125,11 +125,11 @@ def build_llm(temperature: float = 0.7, agent_name: str = "") -> Any:
         )
 
     if provider == LLM_PROVIDER_CLAUDE:
-        return _build_claude(temperature, agent_name)
-    return _build_gemini(temperature, agent_name)
+        return _build_claude(temperature, max_tokens, agent_name)
+    return _build_gemini(temperature, max_tokens, agent_name)
 
 
-def _build_claude(temperature: float, agent_name: str = "") -> Any:
+def _build_claude(temperature: float, max_tokens: int = 16000, agent_name: str = "") -> Any:
     api_key = os.environ.get("LLM_API_KEY")
     if not api_key:
         raise OSError(
@@ -137,12 +137,15 @@ def _build_claude(temperature: float, agent_name: str = "") -> Any:
             "Required when ACTIVE_LLM=claude. Add it to your .env file."
         )
     logger.info("LLM provider: Claude (%s)", DEFAULT_CLAUDE_MODEL)
-    llm = LLM(model=DEFAULT_CLAUDE_MODEL, api_key=api_key, temperature=temperature)
+    llm = LLM(
+        model=DEFAULT_CLAUDE_MODEL, api_key=api_key,
+        temperature=temperature, max_tokens=max_tokens,
+    )
     _inject_retry(llm, agent_name=agent_name, model=DEFAULT_CLAUDE_MODEL)
     return llm
 
 
-def _build_gemini(temperature: float, agent_name: str = "") -> Any:
+def _build_gemini(temperature: float, max_tokens: int = 16000, agent_name: str = "") -> Any:
     api_key = os.environ.get("GEMINI_API_KEY")
     if not api_key:
         raise OSError(
@@ -150,6 +153,9 @@ def _build_gemini(temperature: float, agent_name: str = "") -> Any:
             "Required when ACTIVE_LLM=gemini. Add it to your .env file."
         )
     logger.info("LLM provider: Gemini (%s)", DEFAULT_GEMINI_MODEL)
-    llm = LLM(model=DEFAULT_GEMINI_MODEL, api_key=api_key, temperature=temperature)
+    llm = LLM(
+        model=DEFAULT_GEMINI_MODEL, api_key=api_key,
+        temperature=temperature, max_tokens=max_tokens,
+    )
     _inject_retry(llm, agent_name=agent_name, model=DEFAULT_GEMINI_MODEL)
     return llm

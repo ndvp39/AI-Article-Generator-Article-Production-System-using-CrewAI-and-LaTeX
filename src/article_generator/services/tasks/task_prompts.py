@@ -15,26 +15,35 @@ _RESEARCH_OUT = (
 )
 
 _WRITE_DESC = (
-    "Using ONLY the researcher's outline as your source, write a complete academic "
-    "article in Markdown on: '{topic}'.\n"
-    "LANGUAGE REQUIREMENT (non-negotiable): The article body MUST be written primarily "
-    "in Hebrew (≥ 90% of prose). English is permitted ONLY for: technical terms, "
-    "variable names, code snippets, and citations. All section titles, abstracts, "
-    "introductions, chapter bodies, and conclusions MUST be in Hebrew.\n"
-    "LENGTH REQUIREMENT: The article must be ≥ 12,000 words to produce ≥ 15 PDF pages. "
-    "Every chapter must be substantial (≥ 2,000 words each). Do NOT truncate.\n"
-    "Must include: cover metadata block, abstract (Hebrew), introduction (Hebrew), "
-    "≥ 4 body chapters in Hebrew, ≥ 1 Markdown table, "
-    "≥ 1 formula placeholder (<!-- FORMULA: ... -->), "
-    "≥ 1 graph placeholder ([GRAPH: ...]), conclusion (Hebrew), "
-    "and bibliography list. All citations must use [AuthorYear] format."
+    "Using ONLY the researcher's outline, write a complete academic article in Markdown "
+    "on: '{topic}'.\n\n"
+    "LANGUAGE: ≥ 90%% Hebrew prose. English only for technical terms, variable names, "
+    "code snippets, and citations. All headings, body text, and conclusions in Hebrew.\n\n"
+    "MANDATORY SECTIONS — write ALL in order (missing or truncated section = TASK FAILURE):\n"
+    "  1. Cover block: title, author, date, course, lecturer (Hebrew)\n"
+    "  2. ## Abstract — ≥ 400 Hebrew words\n"
+    "  3. ## Introduction — ≥ 1,000 Hebrew words\n"
+    "  4. ## Chapter 1 [title from outline] — ≥ 1,200 Hebrew words\n"
+    "  5. ## Chapter 2 [title from outline] — ≥ 1,200 Hebrew words\n"
+    "  6. ## Chapter 3 [title from outline] — ≥ 1,200 Hebrew words\n"
+    "  7. ## Chapter 4 [title from outline] — ≥ 1,200 Hebrew words\n"
+    "  8. ## Conclusion — ≥ 600 Hebrew words\n"
+    "  9. ## Bibliography — every reference from the outline in [AuthorYear] format\n\n"
+    "VISUAL ELEMENTS (embed inside chapters):\n"
+    "  - ≥ 1 Markdown table: | col | col | format\n"
+    "  - ≥ 1 formula placeholder: <!-- FORMULA: describe the formula -->\n"
+    "  - ≥ 1 graph placeholder: [GRAPH: describe the graph]\n\n"
+    "ANTI-TRUNCATION RULE: Write every section to its FULL minimum length before moving "
+    "to the next. Do NOT write '[continued]', '[truncated]', '[see full version]', or any "
+    "placeholder text in place of real content. If you are running low on space, write "
+    "shorter but COMPLETE paragraphs — every section must appear in full. "
+    "Total article MUST reach ≥ 8,000 Hebrew words. Output the entire article now."
 )
 _WRITE_OUT = (
-    "Complete Markdown article (≥ 12,000 words, ≥ 15 pages when compiled) written "
-    "primarily in Hebrew (≥ 90% prose in Hebrew). Contains all mandatory sections: "
-    "abstract, introduction, ≥ 4 chapters, conclusion, bibliography — all in Hebrew. "
+    "Complete Markdown article (≥ 8,000 Hebrew words, ≥ 15 pages when compiled). "
+    "All 9 sections present and fully written in Hebrew (≥ 90%% prose). "
     "Includes ≥ 1 table, ≥ 1 formula placeholder, ≥ 1 graph placeholder, "
-    "and all citations in [AuthorYear] format."
+    "and all citations in [AuthorYear] format. No truncated or placeholder sections."
 )
 
 _REVIEW_DESC = (
@@ -43,13 +52,13 @@ _REVIEW_DESC = (
     "('very', 'basically', 'obviously'). Improve clarity and academic tone. "
     "IMPORTANT: Do NOT translate Hebrew to English — the article must remain primarily "
     "in Hebrew (≥ 90% Hebrew prose). If content was accidentally shortened, restore it "
-    "to the full ≥ 12,000-word length. "
+    "to the full ≥ 8,000-word length. "
     "Do NOT remove or alter [AuthorYear] citations, tables, formula placeholders, "
     "graph placeholders, Hebrew text, or any structural section."
 )
 _REVIEW_OUT = (
     "Revised Markdown article with improved academic tone and clarity. "
-    "Still primarily in Hebrew (≥ 90% prose). Full length maintained (≥ 12,000 words). "
+    "Still primarily in Hebrew (≥ 90% prose). Full length maintained (≥ 8,000 words). "
     "All structural elements preserved: table, formula placeholders, graph "
     "placeholder, Hebrew content, and all [AuthorYear] citations intact."
 )

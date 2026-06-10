@@ -54,8 +54,10 @@ class ProcessOrchestrator:
     """
 
     def __init__(self, config: dict, llm_kwargs: dict | None = None) -> None:
-        temperature = float(config.get("agents", {}).get("temperature", 0.7))
-        self._llm_kwargs: dict = llm_kwargs or {"temperature": temperature}
+        agents_cfg = config.get("agents", {})
+        temperature = float(agents_cfg.get("temperature", 0.7))
+        max_tokens = int(agents_cfg.get("max_tokens", 16000))
+        self._llm_kwargs: dict = llm_kwargs or {"temperature": temperature, "max_tokens": max_tokens}
         self._pipeline: list[tuple[Queue, Queue]] = []
         self._runners: list[AgentProcessRunner] = []
         self._router: GatekeeperRouter | None = None

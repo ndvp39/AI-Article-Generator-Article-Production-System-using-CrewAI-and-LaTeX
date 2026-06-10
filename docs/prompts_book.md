@@ -430,6 +430,7 @@ This section records prompts that were tested and required iteration. Populated 
 | P-007 | LaTeXFormatterAgent task | v1 | Used LuaLaTeX engine; bidi package had compatibility issues | Switched to XeLaTeX throughout |
 | P-008 | BiDiSpecialistAgent task | v1 | "Confirm at least 1 `\begin{hebrew}` block exists" caused agent to inject Hebrew conclusion into English articles | Removed validation rule; added explicit "DO NOT add ... not already in the document" |
 | P-008 | BiDiSpecialistAgent task | v1 | "OUTPUT: Return the complete corrected .tex file" caused truncation | Changed to write to disk via FileWriterTool, output only short report |
+| P-004 | WriterAgent task | v2 | Agent produced only ~1,300 words despite ≥12,000-word requirement — LLM stopped early because (a) `max_tokens` was never threaded through config→orchestrator→factory to the `LLM(…)` call (defaulted to 8,192 tokens) and (b) prompt had no per-section minimums or anti-truncation enforcement | Raised `max_tokens` 8192→16000 throughout stack; replaced vague word count with 9-section checklist (per-section minimums: Abstract 400 w, Intro 1,000 w, 4×Chapter 1,200 w, Conclusion 600 w); added hard anti-truncation rule; revised total target 12,000→8,000 words (achievable in 16K tokens; ≥15 PDF pages verified at ~350 Hebrew words/page in XeLaTeX) |
 
 ---
 
@@ -444,6 +445,10 @@ This section records prompts that were tested and required iteration. Populated 
 - **Engine choice must be consistent across all layers.** Changing engine from LuaLaTeX to XeLaTeX required updates in: constants.py, setup.json, latex_compiler.py, task_prompts.py, skill files, integration tests, and 4 docs. Missing any one layer causes silent inconsistency.
 
 - **BiDi agent should be a fixer, not a generator.** The bidi_specialist should receive an already-formatted document and make surgical fixes. Treating it as a Hebrew content generator creates dual-responsibility and language injection bugs.
+
+- **Config values are worthless if never threaded to the component that needs them.** `max_tokens=8192` in `setup.json` had zero effect because `ProcessOrchestrator.__init__` only extracted `temperature` — the token cap was silently ignored. Always trace config keys end-to-end from file → loader → factory → API call.
+
+- **Vague word-count requirements are ignored by LLMs.** "Write ≥12,000 words" produces ~1,300 words; an explicit numbered checklist with per-section minimums and an "anti-truncation rule" sentence produces the required length. Treat the LLM like a contractor: specify deliverables item by item, not as a single aggregate number.
 
 *Open questions for final review:*
 - [ ] Which agent produced the most refinement cycles?

@@ -77,7 +77,8 @@ def _mocked_run(
 
 def test_llm_kwargs_temperature_derived_from_config():
     orch = ProcessOrchestrator(config={"agents": {"temperature": "0.3"}})
-    assert orch._llm_kwargs == {"temperature": 0.3}
+    assert orch._llm_kwargs["temperature"] == 0.3
+    assert orch._llm_kwargs["max_tokens"] == 16000
 
 
 def test_llm_kwargs_explicit_override_takes_precedence():
@@ -88,6 +89,7 @@ def test_llm_kwargs_explicit_override_takes_precedence():
 def test_llm_kwargs_default_temperature_when_agents_key_missing():
     orch = ProcessOrchestrator(config={})
     assert orch._llm_kwargs["temperature"] == 0.7
+    assert orch._llm_kwargs["max_tokens"] == 16000
 
 
 # ---------------------------------------------------------------------------
