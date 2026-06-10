@@ -94,7 +94,7 @@ def _inject_retry(llm: Any, agent_name: str = "", model: str = "") -> None:
         # Estimate tokens from message text and response for cost tracking.
         if agent_name:
             input_text = " ".join(
-                m.get("content", "") if isinstance(m, dict) else str(m)
+                (m.get("content") or "") if isinstance(m, dict) else str(m)
                 for m in (messages or [])
             )
             output_text = response if isinstance(response, str) else str(response or "")
