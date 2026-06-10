@@ -18,7 +18,7 @@
       "max_iter": 10
     },
     "latex": {
-      "engine": "lualatex",
+      "engine": "xelatex",
       "passes": 4,
       "output_dir": "results",
       "figures_dir": "figures",

@@ -3,7 +3,7 @@
 
 **Course:** AI Agents — MSC Course  
 **Lecturer:** Dr. Yoram Segal  
-**Version:** 1.11 — Gemini Free Tier + Retry Hardening  
+**Version:** 1.12 — XeLaTeX Engine + Hebrew-Main + Auto-PDF + Subprocess Cost Tracking  
 
 ---
 
@@ -116,9 +116,9 @@ The 2-hour limit accommodates Gemini free-tier rate limiting: at 15 RPM, an agen
 | Python | ≥ 3.10 | Required for modern type hints and `match` statements |
 | uv | ≥ 0.4 | Package manager — `pip` is NOT used |
 | MiKTeX | ≥ 24.x | LaTeX distribution (Windows) |
-| LuaLaTeX | included with MiKTeX | Required for BiDi + Unicode support |
+| XeLaTeX | included with MiKTeX | Required for `bidi` + Hebrew + Unicode support |
 | biber | included with MiKTeX | Bibliography processor |
-| FrankRuhlCLM font | MiKTeX Package Manager | Hebrew font |
+| Arial font | system font (Windows) | Hebrew font via `fontspec` |
 
 > `multiprocessing` is part of the Python standard library — no extra installation needed.
 
@@ -165,7 +165,7 @@ uv sync
 
 Verify:
 ```powershell
-lualatex --version
+xelatex --version
 biber --version
 ```
 
@@ -218,7 +218,7 @@ SERPER_API_KEY=your_serper_api_key_here
       "max_tokens": 8192
     },
     "latex": {
-      "engine": "lualatex",
+      "engine": "xelatex",
       "passes": 4,
       "output_dir": "results"
     },

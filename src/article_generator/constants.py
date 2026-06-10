@@ -25,7 +25,7 @@ GRAPH_FILE_PDF = "graph.pdf"
 GRAPH_FILE_PNG = "graph.png"
 
 # LaTeX compilation
-LATEX_ENGINE = "lualatex"
+LATEX_ENGINE = "xelatex"
 LATEX_PASSES = 4
 BIBER_EXECUTABLE = "biber"
 LATEX_TIMEOUT_SECONDS = 120

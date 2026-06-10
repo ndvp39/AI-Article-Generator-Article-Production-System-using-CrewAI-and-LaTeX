@@ -254,8 +254,8 @@ def test_missing_required_field_raises_bib_generation_error(
 
 
 @pytest.mark.skipif(
-    shutil.which("biber") is None or shutil.which("lualatex") is None,
-    reason="lualatex and biber required for compilation check",
+    shutil.which("biber") is None or shutil.which("xelatex") is None,
+    reason="xelatex and biber required for compilation check",
 )
 def test_bib_compiles_with_biber(tmp_path_factory: pytest.TempPathFactory) -> None:
     """biber accepts the generated .bib — no parse errors at compilation time."""

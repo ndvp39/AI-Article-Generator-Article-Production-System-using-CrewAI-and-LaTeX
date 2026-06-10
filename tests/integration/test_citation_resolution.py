@@ -204,8 +204,8 @@ def test_five_unique_cite_keys_in_tex(citation_sources: tuple[str, str]) -> None
 # ---------------------------------------------------------------------------
 
 pytestmark_compile = pytest.mark.skipif(
-    shutil.which("lualatex") is None or shutil.which("biber") is None,
-    reason="lualatex and biber required",
+    shutil.which("xelatex") is None or shutil.which("biber") is None,
+    reason="xelatex and biber required",
 )
 
 

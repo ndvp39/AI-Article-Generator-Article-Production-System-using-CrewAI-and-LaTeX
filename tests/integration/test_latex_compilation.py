@@ -25,8 +25,8 @@ from article_generator.services.latex_compiler import (
 )
 
 pytestmark = pytest.mark.skipif(
-    shutil.which("lualatex") is None or shutil.which("biber") is None,
-    reason="lualatex and biber required for LaTeX compilation tests",
+    shutil.which("xelatex") is None or shutil.which("biber") is None,
+    reason="xelatex and biber required for LaTeX compilation tests",
 )
 
 # ---------------------------------------------------------------------------

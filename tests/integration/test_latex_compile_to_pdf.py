@@ -2,7 +2,7 @@ from __future__ import annotations
 
 # Integration tests — T-058
 #
-# Verify that LaTeXCompiler.compile() executes the full 4-pass LuaLaTeX + biber
+# Verify that LaTeXCompiler.compile() executes the full 4-pass XeLaTeX + biber
 # pipeline against a real (minimal) .tex + .bib file and produces a valid PDF.
 #
 # DoD: compile() returns CompilationResult(success=True, passes_completed=4,
@@ -21,8 +21,8 @@ from article_generator.services.latex_compiler import (
 
 # Skip entire module if lualatex or biber are absent
 pytestmark = pytest.mark.skipif(
-    shutil.which("lualatex") is None or shutil.which("biber") is None,
-    reason="lualatex and biber must both be installed to run LaTeX integration tests",
+    shutil.which("xelatex") is None or shutil.which("biber") is None,
+    reason="xelatex and biber must both be installed to run LaTeX integration tests",
 )
 
 # ---------------------------------------------------------------------------
@@ -216,7 +216,7 @@ def test_aux_file_exists_after_compile(compile_result: CompilationResult) -> Non
 
 
 def test_bbl_file_exists_after_biber(compile_result: CompilationResult) -> None:
-    """biber writes a .bbl file that lualatex reads in passes 3 and 4."""
+    """biber writes a .bbl file that xelatex reads in passes 3 and 4."""
     assert compile_result.pdf_path is not None
     bbl = compile_result.pdf_path.with_suffix(".bbl")
     assert bbl.exists()

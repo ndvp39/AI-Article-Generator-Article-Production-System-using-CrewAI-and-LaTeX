@@ -85,8 +85,8 @@ Conclusion.
 """
 
 pytestmark = pytest.mark.skipif(
-    shutil.which("lualatex") is None,
-    reason="lualatex must be installed to run BiDi rendering tests",
+    shutil.which("xelatex") is None,
+    reason="xelatex must be installed to run BiDi rendering tests",
 )
 
 

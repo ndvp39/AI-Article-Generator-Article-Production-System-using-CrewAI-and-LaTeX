@@ -47,7 +47,7 @@ def _agent_subprocess(
             )
             return
 
-        llm = build_llm(**llm_kwargs)
+        llm = build_llm(agent_name=agent_name, **llm_kwargs)
         agent = agent_cls(llm=llm).build()
 
         content_prefix = (

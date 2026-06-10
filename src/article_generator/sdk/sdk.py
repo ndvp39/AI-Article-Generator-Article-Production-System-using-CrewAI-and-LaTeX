@@ -6,8 +6,10 @@ from pathlib import Path
 
 from article_generator.constants import (
     ARTICLE_MD_FILE,
+    ARTICLE_TEX_FILE,
     DEFAULT_LLM_TIER,
     LLM_PROVIDER_CLAUDE,
+    REFERENCES_BIB_FILE,
     RESULTS_DIR,
 )
 from article_generator.services.cost_tracker import CostReport, CostTracker, CrossModelComparison
@@ -40,6 +42,31 @@ class ArticleGeneratorSDK:
         result = self._crew_service.run_pipeline(topic)
         if result.markdown_content:
             self._file_manager.save_markdown(result.markdown_content, ARTICLE_MD_FILE)
+
+        # Auto-compile PDF if article.tex was written to disk by the agents.
+        tex_path = RESULTS_DIR / ARTICLE_TEX_FILE
+        bib_path = RESULTS_DIR / REFERENCES_BIB_FILE
+        if tex_path.exists():
+            logger.info("generate_article — auto-compiling PDF from %s", tex_path)
+            try:
+                compilation = self.compile_pdf(str(tex_path), str(bib_path))
+                if compilation.success:
+                    logger.info(
+                        "generate_article — PDF compiled: %s", compilation.pdf_path
+                    )
+                    result.pdf_path = str(compilation.pdf_path)
+                else:
+                    logger.warning(
+                        "generate_article — PDF compilation failed: %s",
+                        compilation.errors,
+                    )
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("generate_article — PDF compilation error: %s", exc)
+        else:
+            logger.warning(
+                "generate_article — %s not found; skipping PDF compilation", tex_path
+            )
+
         report = self._cost_tracker.generate_report()
         self._cost_tracker.save_report(report)
         return result

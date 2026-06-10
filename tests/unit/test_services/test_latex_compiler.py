@@ -617,7 +617,7 @@ def test_compile_calls_subprocess_four_times(
     assert mock_run.call_count == 4
 
 
-def test_compile_lualatex_called_with_nonstopmode(
+def test_compile_xelatex_called_with_nonstopmode(
     compiler: LaTeXCompiler,
     tex_file: Path,
     clean_log: Path,
@@ -628,12 +628,12 @@ def test_compile_lualatex_called_with_nonstopmode(
         "article_generator.services.latex_compiler.subprocess.run", return_value=mock_ok
     ) as mock_run:
         compiler.compile(str(tex_file), "")
-    lualatex_calls = [
+    xelatex_calls = [
         c for c in mock_run.call_args_list
         if c.args[0][0] == LATEX_ENGINE
     ]
-    assert len(lualatex_calls) == 3
-    for c in lualatex_calls:
+    assert len(xelatex_calls) == 3
+    for c in xelatex_calls:
         assert "--interaction=nonstopmode" in c.args[0]
 
 

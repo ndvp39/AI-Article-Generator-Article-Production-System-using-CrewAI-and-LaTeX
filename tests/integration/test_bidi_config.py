@@ -180,10 +180,10 @@ def test_config_bidi_language_is_english() -> None:
     assert cfg["setup"]["article"]["bidi_language"] == "english"
 
 
-def test_config_latex_engine_is_lualatex() -> None:
-    """setup.json latex.engine must be lualatex — required for polyglossia + Hebrew."""
+def test_config_latex_engine_is_xelatex() -> None:
+    """setup.json latex.engine must be xelatex — required for bidi + polyglossia + Hebrew."""
     config_path = Path("config/setup.json")
     if not config_path.exists():
         pytest.skip("config/setup.json not found")
     cfg = json.loads(config_path.read_text(encoding="utf-8"))
-    assert cfg["setup"]["latex"]["engine"] == "lualatex"
+    assert cfg["setup"]["latex"]["engine"] == "xelatex"

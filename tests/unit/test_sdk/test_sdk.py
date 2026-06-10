@@ -7,6 +7,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from article_generator.sdk.sdk import ArticleGeneratorSDK
+from article_generator.services.latex_compiler import CompilationResult
 from article_generator.shared.models import ArticleResult
 
 _BASE = "article_generator.sdk.sdk"
@@ -22,6 +23,18 @@ def _make_result(markdown: str = "# Article") -> ArticleResult:
     )
 
 
+def _make_compilation(success: bool = True) -> CompilationResult:
+    return CompilationResult(
+        success=success,
+        passes_completed=4 if success else 1,
+        pdf_path=Path("results/article.pdf") if success else None,
+        errors=[],
+        warnings=[],
+        log_path=None,
+        duration_seconds=1.0,
+    )
+
+
 @pytest.fixture()
 def mocks():
     with ExitStack() as stack:
@@ -31,8 +44,11 @@ def mocks():
             "files": stack.enter_context(patch(f"{_BASE}.FileManager")),
             "gatekeeper": stack.enter_context(patch(f"{_BASE}.ApiGatekeeper")),
             "cost_tracker": stack.enter_context(patch(f"{_BASE}.CostTracker")),
+            # Patch LaTeXCompiler so generate_article() auto-compile never spawns xelatex.
+            "latex_compiler": stack.enter_context(patch(f"{_BASE}.LaTeXCompiler")),
         }
         m["crew"].return_value.run_pipeline.return_value = _make_result()
+        m["latex_compiler"].return_value.compile.return_value = _make_compilation()
         yield m
 
 

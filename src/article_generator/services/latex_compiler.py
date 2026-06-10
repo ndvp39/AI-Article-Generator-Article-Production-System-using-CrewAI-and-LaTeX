@@ -39,11 +39,11 @@ logger = logging.getLogger(__name__)
 
 
 class LaTeXCompiler:
-    """Produces .tex/.bib files from Markdown and compiles to PDF via LuaLaTeX.
+    """Produces .tex/.bib files from Markdown and compiles to PDF via XeLaTeX.
 
     T-054: generate_tex()  — Markdown → .tex with full preamble.
     T-055: generate_bib()  — reference list → .bib file.
-    T-056: compile()       — 4-pass LuaLaTeX + biber compilation.
+    T-056: compile()       — 4-pass XeLaTeX + biber compilation.
     """
 
     def __init__(self, output_dir: Path | None = None, assets_dir: Path | None = None) -> None:
@@ -94,10 +94,10 @@ class LaTeXCompiler:
         start = time.monotonic()
         passes_done = 0
         try:
-            self._run_lualatex(tex, work_dir, result); passes_done = 1  # noqa: E702
-            self._run_biber(stem, work_dir, result);   passes_done = 2  # noqa: E702
-            self._run_lualatex(tex, work_dir, result); passes_done = 3  # noqa: E702
-            self._run_lualatex(tex, work_dir, result); passes_done = 4  # noqa: E702
+            self._run_latex_engine(tex, work_dir, result); passes_done = 1  # noqa: E702
+            self._run_biber(stem, work_dir, result);        passes_done = 2  # noqa: E702
+            self._run_latex_engine(tex, work_dir, result); passes_done = 3  # noqa: E702
+            self._run_latex_engine(tex, work_dir, result); passes_done = 4  # noqa: E702
         except CompilationError as exc:
             result.passes_completed = passes_done
             result.duration_seconds = time.monotonic() - start
@@ -115,7 +115,7 @@ class LaTeXCompiler:
         )
         return result
 
-    def _run_lualatex(self, tex: Path, work_dir: Path, result: CompilationResult) -> None:
+    def _run_latex_engine(self, tex: Path, work_dir: Path, result: CompilationResult) -> None:
         log_path = work_dir / f"{tex.stem}.log"
         try:
             proc = subprocess.run(
@@ -131,7 +131,7 @@ class LaTeXCompiler:
         result.warnings.extend(self._log_warnings(log_path))
         if proc.returncode != 0 or errors:
             result.errors.extend(errors or [f"{LATEX_ENGINE} exited with code {proc.returncode}"])
-            raise CompilationError(f"LuaLaTeX pass failed: {result.errors[0]}")
+            raise CompilationError(f"XeLaTeX pass failed: {result.errors[0]}")
 
     def _run_biber(self, stem: str, work_dir: Path, result: CompilationResult) -> None:
         try:
