@@ -93,12 +93,16 @@ _LATEX_OUT = (
 )
 
 _BIDI_DESC = (
-    "Read results/article.tex via FileReadTool. Inspect the document for BiDi issues:\n"
-    "1. Verify \\setmainlanguage{hebrew} and \\setotherlanguage{english} are present.\n"
-    "2. Find any bare Hebrew text outside proper language environments.\n"
-    "3. Find any unguarded inline math ($...$) inside Hebrew text — wrap with \\LR{$...$}.\n"
-    "4. Find tables inside RTL blocks — move outside or wrap with \\begin{english}.\n"
-    "5. Verify bidi package is loaded LAST in the preamble (after hyperref).\n"
+    "Read results/article.tex via FileReadTool. Inspect the document for BiDi structural "
+    "markup issues ONLY. DO NOT add, inject, create, or translate any article content. "
+    "The article language (Hebrew, English, or mixed) was set by the writer — preserve it exactly.\n"
+    "Check only:\n"
+    "1. Bare Hebrew text that is present but outside proper language environments — wrap it.\n"
+    "2. Unguarded inline math ($...$) inside existing Hebrew text — wrap with \\LR{$...$}.\n"
+    "3. Tables inside existing RTL blocks — move outside or wrap with \\begin{english}.\n"
+    "4. Verify bidi package order in preamble (bidi LAST, after hyperref) if bidi is present.\n"
+    "DO NOT add \\setmainlanguage, \\begin{hebrew}, or any language declaration that is not "
+    "already in the document.\n"
     "Fix all issues found. Write the COMPLETE corrected file back to results/article.tex "
     "via FileWriterTool. Then output ONLY a short report — do NOT output the LaTeX content "
     "itself. Report format: 'BiDi fix complete: N issues found, N fixed. "
@@ -107,7 +111,6 @@ _BIDI_DESC = (
 _BIDI_OUT = (
     "Short confirmation report: 'BiDi fix complete: N issues found, N fixed. "
     "results/article.tex updated.' "
-    "The corrected file at results/article.tex has: \\setmainlanguage{hebrew}, "
-    "all Hebrew text in correct language context, inline math wrapped with \\LR{}, "
-    "and bidi loaded last."
+    "The corrected file preserves the article's original language structure exactly. "
+    "Only BiDi structural markup was adjusted; no content was added or translated."
 )

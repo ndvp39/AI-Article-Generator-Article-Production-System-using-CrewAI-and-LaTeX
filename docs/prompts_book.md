@@ -301,25 +301,26 @@ Start directly with: import matplotlib
 ```
 role:      "LaTeX Document Engineer"
 goal:      "Convert the reviewed Markdown article into a complete, compilable 
-            LaTeX document with all required packages, cover sheet, table of 
+            XeLaTeX document with all required packages, cover sheet, table of 
             contents, headers/footers, bibliography setup, and figure embedding."
 backstory: "You are an expert in academic LaTeX typesetting with deep knowledge 
             of biblatex, polyglossia, fancyhdr, and TikZ. You produce documents 
             that compile on the first attempt. You never omit the preamble, 
-            never use pdflatex-only packages, and always use LuaLaTeX-compatible 
+            never use pdflatex-only packages, and always use XeLaTeX-compatible 
             syntax."
 ```
 
-**Prompt (task):**
+**Prompt (task, v2 — 2026-06-10, Hebrew-main + XeLaTeX):**
 ```
-Convert the article in your context to a complete LaTeX document.
+Convert the article in your context to a complete XeLaTeX document with
+Hebrew as the MAIN language and English as secondary.
 
 PREAMBLE — include exactly these packages in this order:
 \documentclass[12pt,a4paper]{article}
 \usepackage{fontspec}
 \usepackage{polyglossia}
-\setdefaultlanguage{english}
-\setotherlanguage{hebrew}
+\setmainlanguage{hebrew}
+\setotherlanguage{english}
 \usepackage{geometry}[margin=2.5cm]
 \usepackage{fancyhdr}
 \usepackage{graphicx}
@@ -337,30 +338,23 @@ REQUIRED DOCUMENT ELEMENTS:
 - Cover page with: \title, \author, \date, \maketitle
 - \tableofcontents on new page
 - \pagestyle{fancy} with header (title) and footer (page number)
-- All body chapters as \section{}
-- Hebrew chapter wrapped in \begin{hebrew}...\end{hebrew}
+- Hebrew body text goes directly; English paragraphs in \begin{english}...\end{english}
+- Inline English technical terms use \LR{...}
 - All [AuthorYear] citations converted to \cite{authorYearKeyword}
 - Graph embedded: \includegraphics[width=0.85\textwidth]{figures/graph.pdf}
-- \newpage\printbibliography[title={ביבליוגרפיה / Bibliography}] at the end
+- \newpage\printbibliography[title={ביבליוגרפיה}] at the end
 
-CONVERSIONS:
-- Markdown **bold** → \textbf{}
-- Markdown *italic* → \textit{}
-- Markdown ## heading → \section{}
-- Markdown ### heading → \subsection{}
-- Markdown tables → \begin{table}[h]\centering\begin{tabularx}{\textwidth}{...}
-- Markdown $formula$ → $formula$ (unchanged — already LaTeX math)
-- [AuthorYear] → \cite{authorYearKeyword} (lowercase, no spaces)
-
-OUTPUT: Complete .tex file content only. 
-Start with \documentclass. End with \end{document}.
-No explanation. No markdown wrapping.
+OUTPUT: Write the COMPLETE .tex file to results/article.tex via FileWriterTool.
+Then output ONLY a short confirmation: "Written results/article.tex — N bytes".
+Do NOT output the LaTeX content itself.
 ```
 
 **Notes:**
+- v1 used `\setdefaultlanguage{english}` — wrong; the article is Hebrew-main. Fixed in v2.
+- v1 used LuaLaTeX; v2 uses XeLaTeX (bidi package requirement).
+- v2 moves output to disk (FileWriterTool) instead of returning raw LaTeX — prevents 8192-token truncation of 13K+ character documents.
 - Providing the exact preamble template prevents wrong package ordering (critical for `bidi` last).
 - Listing every conversion explicitly reduces formatter errors on edge cases.
-- "Start with `\documentclass`. End with `\end{document}`" — prevents partial output.
 
 ---
 
@@ -383,14 +377,16 @@ backstory: "You are an expert in Unicode bidirectional text and LaTeX typesettin
             you never rewrite content, only fix BiDi-specific structural issues."
 ```
 
-**Prompt (task):**
+**Prompt (task, v2 — 2026-06-10, do-not-inject rule):**
 ```
-Review the LaTeX document in your context for Hebrew-English BiDi issues.
+Read results/article.tex via FileReadTool. Inspect for BiDi structural markup
+issues ONLY. DO NOT add, inject, create, or translate any article content.
+The article language was set by the writer — preserve it exactly.
 
 CHECK FOR AND FIX these specific issues:
 
-1. BARE HEBREW TEXT — Hebrew characters (Unicode range U+0590–U+05FF) 
-   appearing outside \begin{hebrew}...\end{hebrew}
+1. BARE HEBREW TEXT — Hebrew characters already present but outside
+   \begin{hebrew}...\end{hebrew}
    FIX: wrap in \begin{hebrew}...\end{hebrew}
 
 2. UNGUARDED INLINE MATH IN HEBREW BLOCKS — $...$ inside a hebrew 
@@ -401,29 +397,22 @@ CHECK FOR AND FIX these specific issues:
    hebrew environment
    FIX: wrap the entire table in \begin{LTR}...\end{LTR}
 
-4. DISPLAY MATH IN HEBREW BLOCKS — \begin{equation} or \begin{align} 
-   inside a hebrew environment  
-   FIX: move the equation outside the hebrew block (before or after it)
+4. BIDI PACKAGE ORDER — if bidi is present, confirm it is loaded LAST
+   FIX: move \usepackage{bidi} to the end of the preamble if out of order
 
-VALIDATION:
-- Confirm at least 1 \begin{hebrew} block exists
-- Confirm \usepackage{bidi} appears AFTER \usepackage{polyglossia}
-- Confirm \usepackage{bidi} appears AFTER \usepackage{hyperref}
+DO NOT add \setmainlanguage, \begin{hebrew}, or any language declaration
+not already in the document.
 
-OUTPUT: Return the complete corrected .tex file.
-Before the file, output a brief fix report:
-## BiDi Fix Report
-- Issues found: [N]
-- Issues fixed: [list each fix made]
-- Validation: PASSED / FAILED [reason if failed]
----
-[complete .tex content follows]
+Fix all issues found. Write the COMPLETE corrected file back to
+results/article.tex via FileWriterTool. Then output ONLY:
+"BiDi fix complete: N issues found, N fixed. results/article.tex updated."
 ```
 
 **Notes:**
-- Unicode range specified (U+0590–U+05FF) gives the agent a precise detection target.
-- Fix report before the file content enables programmatic parsing of what was changed.
-- "Surgical fixes only" in backstory helps prevent the agent from rewriting the whole document.
+- v1 included "Confirm at least 1 `\begin{hebrew}` block exists" — this caused the agent to INJECT Hebrew content into English articles. Removed in v2.
+- v1 said "OUTPUT: Return the complete corrected .tex file" — 13K+ chars would be truncated. v2 writes to disk and returns only a short confirmation.
+- "DO NOT add ... not already in the document" is explicit because the agent otherwise "helps" by adding missing language config.
+- Unicode range specified (U+0590–U+05FF) gives the agent a precise detection target for bare Hebrew.
 
 ---
 
@@ -436,16 +425,27 @@ This section records prompts that were tested and required iteration. Populated 
 | P-004 | WriterAgent task | v1 | Agent wrapped output in ```markdown fences | Added "OUTPUT: Pure Markdown only. Start directly with # [Title]." |
 | P-006 | GraphGeneratorAgent task | v1 | Agent included `plt.show()` | Added to FORBIDDEN list explicitly |
 | P-006 | GraphGeneratorAgent task | v2 | Agent wrapped code in ```python fences | Added "No markdown code fences. Start directly with: import matplotlib" |
-| *(more entries added during development)* | | | | |
+| P-007 | LaTeXFormatterAgent task | v1 | `\setdefaultlanguage{english}` made English the main language; Hebrew article rendered LTR | Changed to `\setmainlanguage{hebrew}` + `\setotherlanguage{english}` |
+| P-007 | LaTeXFormatterAgent task | v1 | "OUTPUT: Complete .tex file content only" caused 13K+ char output to be truncated at 8192 tokens | Changed to write file via FileWriterTool, output only short confirmation |
+| P-007 | LaTeXFormatterAgent task | v1 | Used LuaLaTeX engine; bidi package had compatibility issues | Switched to XeLaTeX throughout |
+| P-008 | BiDiSpecialistAgent task | v1 | "Confirm at least 1 `\begin{hebrew}` block exists" caused agent to inject Hebrew conclusion into English articles | Removed validation rule; added explicit "DO NOT add ... not already in the document" |
+| P-008 | BiDiSpecialistAgent task | v1 | "OUTPUT: Return the complete corrected .tex file" caused truncation | Changed to write to disk via FileWriterTool, output only short report |
 
 ---
 
 ## Key Lessons (Updated During Development)
 
-*This section is filled in as development progresses.*
+- **Explicit "do not" rules matter more than "only do" rules.** P-008 v1 said "fix BiDi structural issues only" but also included "confirm at least 1 `\begin{hebrew}` block exists" — the validation rule overrode the scope rule and caused the agent to inject Hebrew content into English articles. Removing the implicit affirmation mandate fixed the behavior.
 
+- **Output size determines delivery mechanism.** A 13K+ character LaTeX document cannot be returned as agent output (8192-token truncation). File-write-only output (FileWriterTool + short confirmation) is the correct pattern for large documents.
+
+- **Language declarations must be explicit in `expected_output`.** Without `\setmainlanguage{hebrew}` explicitly in the task's expected_output, the LaTeXFormatter defaulted to English-main. The model interprets "silence" on a parameter as "use the default."
+
+- **Engine choice must be consistent across all layers.** Changing engine from LuaLaTeX to XeLaTeX required updates in: constants.py, setup.json, latex_compiler.py, task_prompts.py, skill files, integration tests, and 4 docs. Missing any one layer causes silent inconsistency.
+
+- **BiDi agent should be a fixer, not a generator.** The bidi_specialist should receive an already-formatted document and make surgical fixes. Treating it as a Hebrew content generator creates dual-responsibility and language injection bugs.
+
+*Open questions for final review:*
 - [ ] Which agent produced the most refinement cycles?
-- [ ] Which constraint (forbidden/required) had the biggest quality impact?
 - [ ] Did CrewAI context passing work as expected, or did agents ignore context?
-- [ ] Did the Hebrew chapter requirement need special prompt engineering?
 - [ ] Did the "no fabricated citations" instruction reduce hallucinations measurably?

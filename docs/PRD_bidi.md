@@ -168,7 +168,7 @@ The `BiDiSpecialistAgent` MUST scan the LaTeX output for common BiDi failure pat
 
 ### 2.2 Non-Functional Requirements
 
-**NFR-BIDI-01:** Zero "missing character" warnings in LuaLaTeX log for Hebrew Unicode codepoints.  
+**NFR-BIDI-01:** Zero "missing character" warnings in XeLaTeX log for Hebrew Unicode codepoints.  
 **NFR-BIDI-02:** Zero reversed-word-order or mirrored-punctuation artifacts visible in compiled PDF.  
 **NFR-BIDI-03:** BiDi validation pass by `BiDiSpecialistAgent` MUST complete in ≤ 30 seconds.  
 **NFR-BIDI-04:** Hebrew font MUST be available in the MiKTeX installation; `LaTeXCompiler` MUST verify font availability before compilation and raise `FontNotFoundError` if missing.  
@@ -188,18 +188,21 @@ WriterAgent
     │  writes Hebrew article (main language RTL) with English technical terms inline
     │  uses plain Hebrew text (Unicode) in its output
     ▼
-BiDiSpecialistAgent          ◄── NEW validation pass
-    │  scans WriterAgent output for raw Hebrew text
-    │  wraps bare Hebrew in \begin{hebrew}...\end{hebrew}
-    │  wraps inline math in \LRE{$...$}
-    │  wraps tables in \begin{LTR}...\end{LTR}
+EditorAgent
+    │  reviews and improves the article; preserves Hebrew content
     ▼
 LaTeXFormatterAgent
-    │  receives validated BiDi-correct content
-    │  inserts into full .tex template with polyglossia preamble
+    │  converts Markdown to .tex with polyglossia preamble
+    │  inserts \setmainlanguage{hebrew}, language environments, wraps math
+    ▼
+BiDiSpecialistAgent          ◄── Final BiDi validation pass
+    │  scans LaTeX for bare Hebrew outside language environments
+    │  wraps inline math in \LRE{$...$} inside hebrew blocks
+    │  wraps tables in \begin{LTR}...\end{LTR} inside RTL blocks
+    │  MUST NOT add or inject any new content — only fix existing markup
     ▼
 LaTeXCompiler
-    │  runs 4-pass lualatex/biber pipeline
+    │  runs 4-pass xelatex/biber pipeline
     │  checks log for BiDi warnings
     ▼
   article.pdf
@@ -359,7 +362,7 @@ class BiDiResult:
 `BiDiResult.validation_passed == True` requires:
 1. `len(issues_unfixed) == 0`
 2. `hebrew_env_count >= 1` (at least one Hebrew block present)
-3. Zero "missing character" warnings in subsequent LuaLaTeX log
+3. Zero "missing character" warnings in subsequent XeLaTeX log
 
 ---
 
@@ -370,7 +373,7 @@ class BiDiResult:
 | Hebrew env count | ≥ 1 | `BiDiResult.hebrew_env_count` |
 | Unguarded math in RTL | 0 | `BidiIssue` count with `type="unguarded_math"` |
 | Bare Hebrew outside env | 0 | `BidiIssue` count with `type="bare_hebrew"` |
-| Missing character warnings | 0 | Count of `Missing character:` in LuaLaTeX log |
+| Missing character warnings | 0 | Count of `Missing character:` in XeLaTeX log |
 | BiDi agent runtime | ≤ 30 s | Wall clock of `BiDiSpecialistAgent.run()` |
 | RTL table artifacts | 0 | `BidiIssue` count with `type="rtl_table"` |
 | Punctuation direction errors | 0 | Manual PDF review |
@@ -379,11 +382,11 @@ class BiDiResult:
 
 ## 8. Constraints
 
-1. **LuaLaTeX or XeLaTeX only:** `pdflatex` cannot compile `bidi` + `polyglossia`. Any attempt to use `pdflatex` MUST raise `EngineNotSupportedError`.
+1. **XeLaTeX required:** `pdflatex` cannot compile `bidi` + `polyglossia`. Any attempt to use `pdflatex` MUST raise `EngineNotSupportedError`. XeLaTeX is the primary engine; LuaLaTeX is an acceptable alternative.
 2. **Package order enforced:** `bidi` MUST be the last (or second-to-last) package loaded. `LaTeXFormatterAgent` MUST NOT allow `bidi` to appear before `polyglossia` in the preamble.
 3. **No babel:** `babel` MUST NOT be used in the same document as `polyglossia`. They conflict.
 4. **Hebrew font required:** If the Hebrew font is not found by `fontspec`, `LaTeXCompiler` MUST raise `FontNotFoundError` with instructions for installing the missing font via MiKTeX Package Manager.
-5. **Minimum Hebrew content:** The system MUST fail with a clear error if the article contains zero `\begin{hebrew}...\end{hebrew}` blocks after `BiDiSpecialistAgent` processing — this violates Project.md §3.
+5. **Language consistency:** The `BiDiSpecialistAgent` MUST NOT inject `\begin{hebrew}` blocks or any language-switching content. Language structure is set by the `LaTeXFormatterAgent`. The bidi agent only fixes structural markup issues in the existing content.
 6. **No plain Unicode Hebrew outside environments:** Raw Hebrew characters (U+0590–U+05FF) outside a `hebrew` environment or `\RLE{}` command MUST be flagged as errors, not warnings, and fixed before compilation.
 
 ---
@@ -397,7 +400,7 @@ class BiDiResult:
 | **Manual `\hbox{} + \rlap{}`** | Possible for simple cases but does not handle full paragraph RTL; no Hebrew hyphenation; breaks with `hyperref`. Too fragile for a 15-page article. |
 | **Separate Hebrew document + merge** | Generating RTL and LTR content as separate PDFs and merging with `pdfpages` avoids BiDi entirely but produces no mixed-direction pages — violates Project.md §3 requirement. |
 | **Arabic font package (`arabtex`)** | Designed for Arabic, not Hebrew. Different Unicode block, different rendering engine. Not applicable. |
-| **XeLaTeX instead of LuaLaTeX** | XeLaTeX also supports `bidi` + `polyglossia`. Both are acceptable. LuaLaTeX preferred because `lua` scripts enable richer customization and MiKTeX's default modern engine. XeLaTeX fallback is documented in `LaTeXCompiler`. |
+| **LuaLaTeX instead of XeLaTeX** | LuaLaTeX also supports `bidi` + `polyglossia`. XeLaTeX is preferred because it has more stable `bidi` package compatibility in current MiKTeX versions. |
 
 ---
 
@@ -408,7 +411,7 @@ The BiDi system is considered successful when all of the following are true:
 - [ ] Article contains ≥ 1 substantive Hebrew chapter/section (≥ 3 Hebrew sentences).
 - [ ] All Hebrew text renders RTL in the compiled PDF — no scrambled word order.
 - [ ] All English text within Hebrew sections renders LTR (wrapped in `\LRE{}`).
-- [ ] Zero "missing character" warnings in LuaLaTeX log for Hebrew glyphs.
+- [ ] Zero "missing character" warnings in XeLaTeX log for Hebrew glyphs.
 - [ ] Mathematical formulas in/near Hebrew sections compile without BiDi corruption.
 - [ ] Tables in RTL sections preserve correct LTR column order via `\begin{LTR}` guard.
 - [ ] `BiDiSpecialistAgent` detects and fixes all `bare_hebrew` and `unguarded_math` issues before LaTeX compilation.
@@ -450,10 +453,10 @@ The BiDi system is considered successful when all of the following are true:
 **Action:** `LaTeXCompiler.compile()` called  
 **Expected:** `FontNotFoundError` raised with message: "Hebrew font 'FrankRuhlCLM' not found. Install via MiKTeX Package Manager: mpm --install frankruhlclm"
 
-### Scenario T-007: No Hebrew content — error raised
-**Setup:** `.tex` file with zero `\begin{hebrew}` environments  
+### Scenario T-007: English-only article — no content injected
+**Setup:** `.tex` file with zero `\begin{hebrew}` environments (article written in English)  
 **Action:** `BiDiSpecialistAgent.run()` called  
-**Expected:** `BidiValidationError` raised: "No Hebrew content found. At least one \\begin{hebrew} block is required."
+**Expected:** `BiDiScanner` returns `[]`; agent writes unchanged file and reports 0 issues found. No Hebrew content added.
 
 ### Scenario T-008: Hebrew citation renders correctly
 **Setup:** `.bib` entry with `author = "ברין, סרגיי and Page, Lawrence"`; cited in Hebrew section  

@@ -69,7 +69,7 @@ C4Context
 
     System_Ext(llm, "LLM API", "Claude / OpenAI — provides language model inference for all agents")
     System_Ext(serper, "Serper API", "Google Search API — used exclusively by Researcher agent via SerperDevTool")
-    System_Ext(latex, "MiKTeX / LaTeX Engine", "LuaLaTeX + biber — compiles .tex and .bib files to PDF")
+    System_Ext(latex, "MiKTeX / LaTeX Engine", "XeLaTeX + biber — compiles .tex and .bib files to PDF")
     System_Ext(fs, "File System", "Stores config, assets, generated .tex/.bib, and output PDF")
 
     Rel(user, aag, "Runs pipeline", "CLI / uv run")
@@ -96,13 +96,13 @@ C4Container
     Container(gk_router, "GatekeeperRouter", "Python daemon thread", "Validates AgentMessage schema; routes Q_out → Q_in for each pipeline step; logs every hop")
     Container(watchdog, "Watchdog", "Python daemon thread", "Polls process.is_alive(); detects crashes (status=error); enforces per-agent timeouts; raises AgentTimeoutError")
     Container(gatekeeper, "ApiGatekeeper", "Python", "Rate limiting, queuing, retries for all LLM API calls")
-    Container(compiler, "LaTeXCompiler", "Python + subprocess", "Generates .tex/.bib files and runs 4-pass LuaLaTeX compilation")
+    Container(compiler, "LaTeXCompiler", "Python + subprocess", "Generates .tex/.bib files and runs 4-pass XeLaTeX compilation")
     Container(graph, "GraphRunner", "Python + matplotlib", "Executes graph-generation code, saves figures to assets/")
     Container(config, "ConfigManager", "Python", "Loads and validates setup.json and rate_limits.json")
     Container(cost, "CostTracker", "Python", "Aggregates CallRecords from ApiGatekeeper; computes USD costs per call and per agent; generates CostReport with cross-model comparison table")
 
     System_Ext(llm, "LLM API", "Claude / OpenAI")
-    System_Ext(latex_engine, "LuaLaTeX + biber", "MiKTeX")
+    System_Ext(latex_engine, "XeLaTeX + biber", "MiKTeX")
 
     Rel(user, main, "uv run python src/main.py")
     Rel(main, sdk, "calls generate_article()")
@@ -616,7 +616,7 @@ sequenceDiagram
     SDK->>Comp: compile_pdf(tex_path, bib_path)
 
     loop 4 compilation passes
-        Comp->>Comp: lualatex / biber subprocess
+        Comp->>Comp: xelatex / biber subprocess
     end
 
     Comp-->>SDK: CompilationResult(pdf_path)
@@ -837,7 +837,7 @@ graph TD
             compiler["LaTeXCompiler"]
         end
         subgraph MiKTeX_Installation["MiKTeX Installation"]
-            lualatex["lualatex binary"]
+            xelatex["xelatex binary"]
             biber["biber binary"]
         end
         subgraph File_System["File System"]
@@ -870,7 +870,7 @@ graph TD
     gate -->|HTTPS| llm_api
     p1 -->|SerperDevTool HTTPS| serper_api
     sdk --> compiler
-    compiler -->|subprocess| lualatex
+    compiler -->|subprocess| xelatex
     compiler -->|subprocess| biber
     sdk -->|reads| config_dir
     sdk -->|reads| env_file
@@ -895,16 +895,16 @@ graph TD
 
 ---
 
-### ADR-002: LuaLaTeX as LaTeX Compilation Engine
+### ADR-002: XeLaTeX as LaTeX Compilation Engine
 
 | Field | Detail |
 |-------|--------|
 | **Status** | Accepted |
-| **Decision** | Use LuaLaTeX as the primary engine; XeLaTeX as fallback |
-| **Context** | The document requires Hebrew–English BiDi text, which pdflatex does not support natively |
-| **Rationale** | LuaLaTeX (and XeLaTeX) natively support Unicode, OpenType fonts, and the `polyglossia`/`bidi` packages required for Hebrew-English direction switching. This is mandated in Project.md |
-| **Alternatives considered** | pdflatex — does NOT support Hebrew/BiDi natively; rejected. XeLaTeX — equally valid, kept as fallback in config |
-| **Trade-offs** | LuaLaTeX is slower than pdflatex; acceptable given non-real-time use |
+| **Decision** | Use XeLaTeX as the primary engine |
+| **Context** | The document requires Hebrew–English BiDi text via the `bidi` package, which requires an XeTeX or LuaTeX engine |
+| **Rationale** | XeLaTeX natively supports Unicode, OpenType fonts, and the `polyglossia`/`bidi` packages required for Hebrew-English direction switching. The `bidi` package has the most stable support under XeTeX. This is mandated by Project.md and the course requirements |
+| **Alternatives considered** | pdflatex — does NOT support Hebrew/BiDi natively; rejected. LuaLaTeX — also valid but `bidi` package has known compatibility issues with newer LuaLaTeX versions; XeLaTeX is more stable for this use case |
+| **Trade-offs** | XeLaTeX is slightly slower than pdflatex; acceptable given non-real-time use |
 
 ---
 
@@ -1015,7 +1015,7 @@ graph TD
 |--------|-------|--------|-------------|
 | `generate_tex(markdown, config)` | `str`, `ArticleConfig` | `str` | Convert Markdown to `.tex` |
 | `generate_bib(references)` | `list[Reference]` | `str` | Generate `.bib` file content |
-| `compile(tex_path, bib_path)` | `str`, `str` | `CompilationResult` | 4-pass LuaLaTeX + biber |
+| `compile(tex_path, bib_path)` | `str`, `str` | `CompilationResult` | 4-pass XeLaTeX + biber |
 
 ### 6.4 CostTracker Interface
 
@@ -1072,7 +1072,7 @@ SERPER_API_KEY=your_serper_api_key_here
     "pdf_filename": "article.pdf"
   },
   "latex": {
-    "engine": "lualatex",
+    "engine": "xelatex",
     "compile_passes": 4
   }
 }
@@ -1116,7 +1116,7 @@ class ArticleResult:
 @dataclass
 class CompilationResult:
     success: bool
-    passes_completed: int       # Number of LuaLaTeX passes run
+    passes_completed: int       # Number of XeLaTeX passes run
     pdf_path: str
     errors: list[str]           # LaTeX error lines from log
     warnings: list[str]         # LaTeX warning lines from log

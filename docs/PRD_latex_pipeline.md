@@ -28,17 +28,17 @@ Three main engines compile `.tex` → PDF:
 | `xelatex` | Full | Yes | Yes (bidi pkg) | Medium |
 | `lualatex` | Full | Yes | Yes (luabidi) | Slower |
 
-**Choice:** `lualatex` as primary, `xelatex` as fallback — both are mandated by Project.md §4 and support the Hebrew–English BiDi requirement. `pdflatex` is explicitly excluded.
+**Choice:** `xelatex` as primary — mandated by the `bidi` package requirement and Project.md §4. `pdflatex` is explicitly excluded.
 
 ### 1.3 Multi-Pass Compilation
 LaTeX resolves cross-references (TOC entries, citations, figure numbers, hyperlinks) in a deferred manner — they are written to auxiliary files (`.aux`, `.toc`, `.bbl`) during one pass and read back on the next. This is why **multiple compilation passes are required**:
 
 | Pass | Command | Purpose |
 |------|---------|---------|
-| Pass 1 | `lualatex article.tex` | First parse; writes `.aux` with undefined references |
+| Pass 1 | `xelatex article.tex` | First parse; writes `.aux` with undefined references |
 | Pass 2 | `biber article` | Reads `.aux`, generates `.bbl` bibliography file |
-| Pass 3 | `lualatex article.tex` | Reads `.bbl`; resolves citations; writes updated `.aux` |
-| Pass 4 | `lualatex article.tex` | Resolves any remaining cross-refs (TOC, hyperlinks) |
+| Pass 3 | `xelatex article.tex` | Reads `.bbl`; resolves citations; writes updated `.aux` |
+| Pass 4 | `xelatex article.tex` | Resolves any remaining cross-refs (TOC, hyperlinks) |
 
 **Warning from Project.md §4:** *"If clicking a reference in the document does not jump to the citation in the bibliography — it means a compilation is missing."* Therefore exactly 4 passes are mandatory.
 
@@ -164,16 +164,16 @@ The title page MUST display all five fields from `config/setup.json`:
 ```
 Input: article.tex + references.bib + assets/
   │
-  ├── Pass 1: lualatex --interaction=nonstopmode article.tex
+  ├── Pass 1: xelatex --interaction=nonstopmode article.tex
   │   Output: article.aux, article.toc (undefined refs)
   │
   ├── Pass 2: biber article
   │   Output: article.bbl (bibliography)
   │
-  ├── Pass 3: lualatex --interaction=nonstopmode article.tex
+  ├── Pass 3: xelatex --interaction=nonstopmode article.tex
   │   Output: article.aux updated (citations resolved)
   │
-  └── Pass 4: lualatex --interaction=nonstopmode article.tex
+  └── Pass 4: xelatex --interaction=nonstopmode article.tex
       Output: article.pdf (all cross-refs resolved)
 ```
 
@@ -182,7 +182,7 @@ Each compilation pass is invoked as a subprocess:
 
 ```python
 result = subprocess.run(
-    ["lualatex", "--interaction=nonstopmode", tex_filename],
+    ["xelatex", "--interaction=nonstopmode", tex_filename],
     cwd=output_dir,
     capture_output=True,
     text=True,
@@ -268,7 +268,7 @@ The system SHOULD detect and log these warnings from the `.log` file:
 
 | Metric | Target | Measurement |
 |--------|--------|-------------|
-| Compilation time (4 passes) | ≤ 5 minutes | Wall clock from first lualatex to PDF |
+| Compilation time (4 passes) | ≤ 5 minutes | Wall clock from first xelatex to PDF |
 | PDF page count | ≥ 15 pages | `pdfinfo article.pdf \| grep Pages` |
 | LaTeX fatal errors | 0 | Lines starting with `!` in `.log` |
 | `Overfull \hbox` warnings for tables | 0 | Log scan |
@@ -280,7 +280,7 @@ The system SHOULD detect and log these warnings from the `.log` file:
 
 ## 6. Constraints
 
-1. **Engine:** LuaLaTeX MUST be used as the primary engine. XeLaTeX is the only permitted fallback. `pdflatex` is forbidden.
+1. **Engine:** XeLaTeX MUST be used as the primary engine. `pdflatex` is forbidden.
 2. **Passes:** Exactly 4 passes MUST be executed (1× lualatex, 1× biber, 2× lualatex). Skipping passes will result in broken cross-references.
 3. **Error handling:** The system MUST NOT silently ignore LaTeX fatal errors. `!`-prefixed log lines MUST raise `CompilationError`.
 4. **Table overflow:** Any `Overfull \hbox` warning in a `tabular` context MUST be resolved before the pipeline is considered successful.
@@ -307,7 +307,7 @@ The system SHOULD detect and log these warnings from the `.log` file:
 
 The LaTeX pipeline is considered successful when all of the following are true:
 
-- [ ] `generate_tex()` produces a `.tex` file that LuaLaTeX can parse without fatal errors.
+- [ ] `generate_tex()` produces a `.tex` file that XeLaTeX can parse without fatal errors.
 - [ ] Generated `.tex` includes all mandatory preamble packages (polyglossia, fancyhdr, hyperref, amsmath, graphicx, booktabs, biblatex).
 - [ ] Cover page displays: topic, author, date, course name, lecturer name.
 - [ ] `\tableofcontents` is present and all TOC entries are clickable hyperlinks.

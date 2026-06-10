@@ -14,7 +14,7 @@
 **AI Article Generator** — Automated Academic Article Production System using CrewAI and LaTeX
 
 ### 1.2 Project Description
-An automated multi-agent system built with **CrewAI** that orchestrates specialized AI agents to collaboratively research, write, and produce a professional academic article (~15 pages). The final output is a professionally typeset **PDF document** generated via LaTeX (LuaLaTeX/XeLaTeX with MiKTeX), fully supporting Hebrew–English bidirectional (BiDi) text.
+An automated multi-agent system built with **CrewAI** that orchestrates specialized AI agents to collaboratively research, write, and produce a professional academic article (~15 pages). The final output is a professionally typeset **PDF document** generated via LaTeX (**XeLaTeX** with MiKTeX), fully supporting Hebrew–English bidirectional (BiDi) text.
 
 **Architecture:** Each of the 6 CrewAI agents runs as an **isolated OS process** (`multiprocessing.Process`). Agents communicate exclusively through typed IPC message queues (`multiprocessing.Queue`). A **GatekeeperRouter** validates and routes every inter-agent message. A **Watchdog** monitors process health and enforces per-agent timeouts, ensuring no process hangs or crashes silently.
 
