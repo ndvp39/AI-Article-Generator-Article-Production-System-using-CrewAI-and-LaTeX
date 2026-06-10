@@ -309,10 +309,10 @@
 | T-081 | **Evaluation criterion check:** BiDi text direction correct throughout | `HIGH` | `[x]` | Developer | Hebrew text renders RTL, English renders LTR; no garbled characters or direction corruption |
 | T-082 | **Evaluation criterion check:** No table overflows page margins | `HIGH` | `[x]` | Developer | Visual inspection of all tables in PDF confirms no content cut off at margins |
 | T-083 | **Evaluation criterion check:** All formulas compiled as LaTeX math (not plain text) | `HIGH` | `[x]` | Developer | All formulas render with proper mathematical typesetting; no formula appears as plain `sigma` or `integral` text |
-| T-084 | Full run with real API keys; validate final PDF quality | `HIGH` | `[~]` | Developer | PDF is ≥ 15 pages; cover sheet complete; all visual elements present; BiDi correct; bibliography linked |
+| T-084 | Full run with real API keys; validate final PDF quality | `HIGH` | `[x]` | Developer | PDF is ≥ 15 pages; cover sheet complete; all visual elements present; BiDi correct; bibliography linked |
 | T-085 | Update `README.md` — final user manual | `HIGH` | `[x]` | Developer | Installation, `uv sync`, `.env` setup, `uv run python src/main.py`, output locations, config guide |
 | T-086 | Update `docs/prompts_book.md` with all prompts used during development | `MED` | `[x]` | Developer | Every significant LLM prompt logged with context, goal, output quality notes; all 8 agent prompts documented with refinement log entries |
-| T-087 | Final review: verify all items in Project.md §5 Evaluation Criteria are met | `HIGH` | `[ ]` | Developer | All 4 criteria checked off: links clickable, BiDi correct, tables within margins, formulas compiled |
+| T-087 | Final review: verify all items in Project.md §5 Evaluation Criteria are met | `HIGH` | `[x]` | Developer | All 4 criteria verified on compiled `results/article.pdf` (15 pages): (1) Links/citations clickable — `colorlinks=true`, 0 undefined citations, 26 `\cite{}` all resolved; (2) BiDi correct — `\setmainlanguage{hebrew}` + `\setotherlanguage{english}`, Hebrew title + English body correctly wrapped in `\begin{english}...\end{english}`, no direction corruption; (3) Tables within margins — both `\tabularx{\textwidth}` tables fit; all Overfull \hbox are in paragraphs/bibliography (not tables); (4) Formulas compiled as LaTeX math — 10 `equation`/`align` environments present, no plain-text formulas. Cover sheet amended to include Author, Course (AI Agents MSC HW3), Lecturer (Dr. Yoram Segal). |
 | T-088 | Dynamic multi-provider/tier rate limiting — `LLM_TIER` env var + TPM throttle + 429 backoff | `HIGH` | `[x]` | Developer | `rate_limits.json` v1.01 with `providers.{claude,gemini}.{free,pro}`; `ServiceLimits.tokens_per_minute`; `load_provider_limits()`; TPM sliding window in `ApiGatekeeper`; 429 uses `retry_after_seconds`; 514 tests pass |
 | T-089 | Reactive infinite exponential backoff — remove predictive RPM/TPM counting from `ApiGatekeeper`; 429 → 5s→10s→20s→...→300s infinite retry; bump all `AGENT_TIMEOUT_SECONDS` to 900 | `HIGH` | `[x]` | Developer | `gatekeeper.py` has no sliding windows; 429 retries infinitely with doubling backoff; `DEFAULT_AGENT_TIMEOUT_SECONDS=900`; all per-agent timeouts=900; 3 new backoff tests added; all tests pass |
 | T-090 | Fix orchestrator hang + error propagation — polling loop + error short-circuit | `HIGH` | `[x]` | Developer | ProcessOrchestrator uses 1s polling with watchdog health check; `_agent_subprocess` short-circuits upstream errors; 2 new process_runner tests added |
@@ -341,8 +341,8 @@
 | 6 | M6 — LaTeX Pipeline | T-054 to T-061 | 8 | 0 | 0 |
 | 7 | M7 — BiDi & Bibliography | T-062 to T-067 | 6 | 0 | 0 |
 | 8 | M8 pre — Cost Tracking | T-068 to T-073 | 6 | 0 | 0 |
-| 9 | M8 — Integration & QA | T-074 to T-097 | 22 | 1 | 1 |
-| **Total** | | **133 tasks** | **131** | **1** | **1** |
+| 9 | M8 — Integration & QA | T-074 to T-097 | 24 | 0 | 0 |
+| **Total** | | **133 tasks** | **133** | **0** | **0** |
 
 ---
 
