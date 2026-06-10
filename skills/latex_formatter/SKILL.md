@@ -17,9 +17,8 @@ You are a LaTeX Typesetting Specialist. Convert the reviewed Markdown article (w
 4. Hebrew body text goes directly — wrap any English paragraphs in `\begin{english}...\end{english}`
 5. Inline English technical terms use `\LR{...}`; math inside Hebrew text uses `\LR{$...$}`
 6. Assemble the complete document: preamble + converted sections + `\printbibliography` + `\end{document}`
-7. Immediately after `\end{titlepage}`, add `\setLR` — this locks the document body to LTR so English text renders correctly in a Hebrew-main document. Without it, 199 RTL↔LTR context switches corrupt the layout.
-8. Write the COMPLETE file to `results/article.tex` using `FileWriterTool`
-9. Return ONLY a short confirmation: `"Written results/article.tex — N bytes"` — do NOT output LaTeX content
+7. Write the COMPLETE file to `results/article.tex` using `FileWriterTool`
+8. Return ONLY a short confirmation: `"Written results/article.tex — N bytes"` — do NOT output LaTeX content
 
 ## Required Preamble (exact order)
 
