@@ -1,0 +1,132 @@
+{
+  "timestamp": "2026-06-10T20:17:33.722523+00:00",
+  "total_calls": 52,
+  "total_input_tokens": 350147,
+  "total_output_tokens": 79165,
+  "total_cost_usd": 0.0,
+  "budget_alert_threshold_usd": 1.0,
+  "budget_alert_triggered": false,
+  "by_agent": [
+    {
+      "agent_name": "bidi_specialist",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 10,
+      "input_tokens": 155106,
+      "output_tokens": 10613,
+      "cost_usd": 0.0
+    },
+    {
+      "agent_name": "editor",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 2,
+      "input_tokens": 8603,
+      "output_tokens": 7852,
+      "cost_usd": 0.0
+    },
+    {
+      "agent_name": "graph_generator",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 5,
+      "input_tokens": 23777,
+      "output_tokens": 14196,
+      "cost_usd": 0.0
+    },
+    {
+      "agent_name": "latex_formatter",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 25,
+      "input_tokens": 115642,
+      "output_tokens": 28071,
+      "cost_usd": 0.0
+    },
+    {
+      "agent_name": "researcher",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 8,
+      "input_tokens": 36220,
+      "output_tokens": 10572,
+      "cost_usd": 0.0
+    },
+    {
+      "agent_name": "writer",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 2,
+      "input_tokens": 10799,
+      "output_tokens": 7861,
+      "cost_usd": 0.0
+    }
+  ],
+  "by_model": [
+    {
+      "model_id": "anthropic/claude-sonnet-4-6",
+      "display_name": "anthropic/claude-sonnet-4-6",
+      "provider": "unknown",
+      "input_tokens": 350147,
+      "output_tokens": 79165,
+      "cost_usd": 0.0
+    }
+  ],
+  "cross_model_comparison": {
+    "total_input_tokens": 350147,
+    "total_output_tokens": 79165,
+    "entries": [
+      {
+        "model_id": "claude-haiku-4-5",
+        "display_name": "Claude Haiku 4.5",
+        "provider": "Anthropic",
+        "input_tokens": 350147,
+        "output_tokens": 79165,
+        "cost_usd": 0.596778
+      },
+      {
+        "model_id": "claude-sonnet-4-6",
+        "display_name": "Claude Sonnet 4.6",
+        "provider": "Anthropic",
+        "input_tokens": 350147,
+        "output_tokens": 79165,
+        "cost_usd": 2.237916
+      },
+      {
+        "model_id": "claude-opus-4-7",
+        "display_name": "Claude Opus 4.7",
+        "provider": "Anthropic",
+        "input_tokens": 350147,
+        "output_tokens": 79165,
+        "cost_usd": 11.18958
+      },
+      {
+        "model_id": "gemini/gemini-2.0-flash",
+        "display_name": "Gemini 2.0 Flash",
+        "provider": "Google",
+        "input_tokens": 350147,
+        "output_tokens": 79165,
+        "cost_usd": 0.050011
+      },
+      {
+        "model_id": "gemini/gemini-1.5-pro",
+        "display_name": "Gemini 1.5 Pro",
+        "provider": "Google",
+        "input_tokens": 350147,
+        "output_tokens": 79165,
+        "cost_usd": 0.833509
+      },
+      {
+        "model_id": "gpt-4o-mini",
+        "display_name": "GPT-4o mini",
+        "provider": "OpenAI",
+        "input_tokens": 350147,
+        "output_tokens": 79165,
+        "cost_usd": 0.100021
+      },
+      {
+        "model_id": "gpt-4o",
+        "display_name": "GPT-4o",
+        "provider": "OpenAI",
+        "input_tokens": 350147,
+        "output_tokens": 79165,
+        "cost_usd": 1.667018
+      }
+    ]
+  },
+  "duration_seconds": 0.0
+}
