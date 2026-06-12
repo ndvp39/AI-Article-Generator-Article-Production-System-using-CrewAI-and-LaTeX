@@ -181,21 +181,22 @@ Copy-Item .env-example .env
 
 Edit `.env`:
 ```
-# LLM provider: "gemini" (default, free) or "claude" (requires paid credits)
-ACTIVE_LLM=gemini
+# LLM provider: "claude" (default — reliable Hebrew) or "gemini" (free tier)
+ACTIVE_LLM=claude
 
-# Google Gemini — free tier: 15 RPM, 1 500 RPD
+# Anthropic Claude — default provider
+# Get key at: https://console.anthropic.com
+LLM_API_KEY=your_anthropic_api_key_here
+
+# Google Gemini (only needed when ACTIVE_LLM=gemini)
 # Get key at: https://aistudio.google.com/app/apikey
 GEMINI_API_KEY=your_gemini_api_key_here
-
-# Anthropic Claude (only needed when ACTIVE_LLM=claude)
-LLM_API_KEY=your_anthropic_api_key_here
 
 # Serper — always required
 SERPER_API_KEY=your_serper_api_key_here
 ```
 
-> **Gemini free tier:** The pipeline uses 15-RPM-aware exponential backoff (60 s → 300 s cap, max 20 retries). Expect a full pipeline run to take **15–45 minutes** depending on rate limiting.
+> **Why Claude is the default:** only `claude-sonnet-4-6` reliably honors the Hebrew-content mandate and uses the file tools correctly. Gemini's free tier works but is slower and less consistent on Hebrew — see *Switching LLM Provider* below.
 
 > **Security:** `.env` is listed in `.gitignore`. Never commit it.
 
@@ -244,16 +245,18 @@ Used by `CostTracker` to compute USD costs and cross-model comparisons.
 ### Switching LLM Provider
 
 ```
-# Gemini (default — free tier available)
-ACTIVE_LLM=gemini
-GEMINI_API_KEY=your_gemini_key
-
-# Claude (requires paid credits)
+# Claude (default — reliable Hebrew, requires paid credits)
 ACTIVE_LLM=claude
 LLM_API_KEY=your_anthropic_key
+
+# Gemini (free tier — 15 RPM, slower; less consistent on Hebrew)
+ACTIVE_LLM=gemini
+GEMINI_API_KEY=your_gemini_key
 ```
 
-Default models: `gemini/gemini-2.5-flash` / `anthropic/claude-sonnet-4-6` (set in `constants.py`, overridable in `setup.json`).
+> **Gemini free tier:** uses 15-RPM-aware exponential backoff (60 s → 300 s cap, max 20 retries); a full run can take **15–45 minutes** depending on rate limiting.
+
+Default models: `anthropic/claude-sonnet-4-6` / `gemini/gemini-2.5-flash` (set in `constants.py`, overridable in `setup.json`).
 
 > **Note:** The `anthropic/` prefix in the Claude model ID is required — without it, the CrewAI LLM factory misidentifies the provider as OpenAI.
 
