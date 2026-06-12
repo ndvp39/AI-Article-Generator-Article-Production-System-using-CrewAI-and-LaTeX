@@ -26,7 +26,33 @@ The pipeline uses **6 specialized AI agents**, each running as an **isolated OS 
 
 ## Sample Output
 
-📄 **[Download the generated article PDF](results/article.pdf)** — Multi-Agent Systems and Autonomous AI, compiled by the 6-agent pipeline (15 pages, XeLaTeX, Hebrew main language).
+📄 **[Download the generated article PDF](results/article.pdf)** — Multi-Agent Systems and Autonomous AI, compiled by the 6-agent pipeline (24 pages, XeLaTeX, Hebrew main language).
+
+---
+
+## LaTeX Project
+
+The complete LaTeX project that produced [`results/article.pdf`](results/article.pdf) lives in the **`results/`** directory. It is self-contained (standard `article` class, no custom `.cls`) and consists of:
+
+| File | Role |
+|------|------|
+| [`results/article.tex`](results/article.tex) | Main LaTeX source |
+| [`results/references.bib`](results/references.bib) | Bibliography (biber) |
+| [`results/figures/diagram.pdf`](results/figures/diagram.pdf) | Architecture diagram (image artifact) |
+| [`results/figures/graph.pdf`](results/figures/graph.pdf) | Programmatically generated matplotlib graph |
+| `results/article.pdf` | Compiled output |
+
+To rebuild the PDF from source (4-pass compile, as required for clickable citations):
+
+```powershell
+cd results
+xelatex article.tex
+biber article
+xelatex article.tex
+xelatex article.tex
+```
+
+> The pipeline normally generates and compiles this automatically; the commands above reproduce the PDF by hand from the committed sources.
 
 ---
 
