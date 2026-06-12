@@ -75,9 +75,16 @@ LLM_PROVIDER_CLAUDE = "claude"
 LLM_PROVIDER_GEMINI = "gemini"
 LLM_PROVIDERS_SUPPORTED = frozenset({LLM_PROVIDER_CLAUDE, LLM_PROVIDER_GEMINI})
 DEFAULT_CLAUDE_MODEL = "anthropic/claude-sonnet-4-6"
-DEFAULT_GEMINI_MODEL = "gemini/gemini-2.0-flash"
+DEFAULT_GEMINI_MODEL = "gemini/gemini-2.5-flash"
 
 # LLM tiers
 LLM_TIER_FREE = "free"
 LLM_TIER_PRO = "pro"
 DEFAULT_LLM_TIER = LLM_TIER_FREE
+
+# Cover-sheet metadata (assignment-fixed; surfaced on the LaTeX title page).
+# Kept as project constants so the title page is generated deterministically by
+# the agents without any post-hoc manual editing of the .tex output.
+COVER_AUTHOR = "Ilya and Nadav"
+COVER_COURSE = "AI Agents — MSC Course, HW3"
+COVER_LECTURER = "Dr. Yoram Segal"

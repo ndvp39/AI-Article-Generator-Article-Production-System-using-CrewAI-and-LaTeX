@@ -1,5 +1,2 @@
-{"agent_name": "graph_generator", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 1947, "output_tokens": 2127, "timestamp": 1781115003.238041}
-{"agent_name": "graph_generator", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 1967, "output_tokens": 2236, "timestamp": 1781115045.40641}
-{"agent_name": "graph_generator", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 6505, "output_tokens": 3308, "timestamp": 1781117522.034014}
-{"agent_name": "graph_generator", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 6667, "output_tokens": 3181, "timestamp": 1781117588.4312181}
-{"agent_name": "graph_generator", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 6691, "output_tokens": 3344, "timestamp": 1781117654.0279822}
+{"agent_name": "graph_generator", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 10405, "output_tokens": 3192, "timestamp": 1781216847.2651353}
+{"agent_name": "graph_generator", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 10467, "output_tokens": 9857, "timestamp": 1781217405.4274871}

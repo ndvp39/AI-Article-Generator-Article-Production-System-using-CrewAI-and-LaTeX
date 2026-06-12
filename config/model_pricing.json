@@ -10,7 +10,19 @@
         "input_price_per_mtok": 0.80,
         "output_price_per_mtok": 4.00
       },
+      "anthropic/claude-haiku-4-5": {
+        "display_name": "Claude Haiku 4.5",
+        "provider": "Anthropic",
+        "input_price_per_mtok": 0.80,
+        "output_price_per_mtok": 4.00
+      },
       "claude-sonnet-4-6": {
+        "display_name": "Claude Sonnet 4.6",
+        "provider": "Anthropic",
+        "input_price_per_mtok": 3.00,
+        "output_price_per_mtok": 15.00
+      },
+      "anthropic/claude-sonnet-4-6": {
         "display_name": "Claude Sonnet 4.6",
         "provider": "Anthropic",
         "input_price_per_mtok": 3.00,
@@ -27,6 +39,12 @@
         "provider": "Google",
         "input_price_per_mtok": 0.075,
         "output_price_per_mtok": 0.30
+      },
+      "gemini/gemini-2.5-flash": {
+        "display_name": "Gemini 2.5 Flash",
+        "provider": "Google",
+        "input_price_per_mtok": 0.30,
+        "output_price_per_mtok": 2.50
       },
       "gemini/gemini-1.5-pro": {
         "display_name": "Gemini 1.5 Pro",

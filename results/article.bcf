@@ -96,7 +96,7 @@
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>maxbibnames</bcf:key>
-      <bcf:value>5</bcf:value>
+      <bcf:value>3</bcf:value>
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>maxcitenames</bcf:key>
@@ -104,7 +104,7 @@
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>maxsortnames</bcf:key>
-      <bcf:value>5</bcf:value>
+      <bcf:value>3</bcf:value>
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>maxitems</bcf:key>
@@ -168,7 +168,7 @@
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>sortlocale</bcf:key>
-      <bcf:value>american</bcf:value>
+      <bcf:value>hebrew</bcf:value>
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>sortingtemplatename</bcf:key>
@@ -331,7 +331,7 @@
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>maxbibnames</bcf:key>
-      <bcf:value>5</bcf:value>
+      <bcf:value>3</bcf:value>
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>maxcitenames</bcf:key>
@@ -339,7 +339,7 @@
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>maxsortnames</bcf:key>
-      <bcf:value>5</bcf:value>
+      <bcf:value>3</bcf:value>
     </bcf:option>
     <bcf:option type="singlevalued">
       <bcf:key>maxitems</bcf:key>
@@ -2374,41 +2374,65 @@
     <bcf:datasource type="file" datatype="bibtex" glob="false">references.bib</bcf:datasource>
   </bcf:bibdata>
   <bcf:section number="0">
-    <bcf:citekey order="1" intorder="1">marketusMAS2024</bcf:citekey>
-    <bcf:citekey order="2" intorder="1">wooldridge1995intelligent</bcf:citekey>
-    <bcf:citekey order="3" intorder="1">russell2020artificial</bcf:citekey>
-    <bcf:citekey order="4" intorder="1">marketusMAS2024</bcf:citekey>
-    <bcf:citekey order="5" intorder="1">ibm2024enterprise</bcf:citekey>
-    <bcf:citekey order="6" intorder="1">labrou1997kqml</bcf:citekey>
-    <bcf:citekey order="7" intorder="1">fipa1997</bcf:citekey>
-    <bcf:citekey order="8" intorder="1">mcp2024</bcf:citekey>
-    <bcf:citekey order="9" intorder="1">a2a2024</bcf:citekey>
-    <bcf:citekey order="10" intorder="1">lowe2017multiagent</bcf:citekey>
-    <bcf:citekey order="11" intorder="1">vinyals2019grandmaster</bcf:citekey>
-    <bcf:citekey order="12" intorder="1">wang2024survey</bcf:citekey>
-    <bcf:citekey order="13" intorder="1">autogen2023</bcf:citekey>
-    <bcf:citekey order="14" intorder="1">crewai2024</bcf:citekey>
-    <bcf:citekey order="15" intorder="1">langgraph2024</bcf:citekey>
-    <bcf:citekey order="16" intorder="1">llamaindex2024</bcf:citekey>
-    <bcf:citekey order="17" intorder="1">autogen2023</bcf:citekey>
-    <bcf:citekey order="17" intorder="2">crewai2024</bcf:citekey>
-    <bcf:citekey order="17" intorder="3">langgraph2024</bcf:citekey>
-    <bcf:citekey order="17" intorder="4">llamaindex2024</bcf:citekey>
-    <bcf:citekey order="18" intorder="1">ibm2024enterprise</bcf:citekey>
-    <bcf:citekey order="19" intorder="1">marketusMAS2024</bcf:citekey>
-    <bcf:citekey order="19" intorder="2">ibm2024enterprise</bcf:citekey>
-    <bcf:citekey order="20" intorder="1">dafoe2020open</bcf:citekey>
-    <bcf:citekey order="21" intorder="1">dafoe2020open</bcf:citekey>
-    <bcf:citekey order="22" intorder="1">galileo2024hallucination</bcf:citekey>
-    <bcf:citekey order="23" intorder="1">dafoe2020open</bcf:citekey>
-    <bcf:citekey order="24" intorder="1">marketusMAS2024</bcf:citekey>
-    <bcf:citekey order="24" intorder="2">autogen2023</bcf:citekey>
-    <bcf:citekey order="24" intorder="3">crewai2024</bcf:citekey>
-    <bcf:citekey order="24" intorder="4">langgraph2024</bcf:citekey>
-    <bcf:citekey order="24" intorder="5">dafoe2020open</bcf:citekey>
-    <bcf:citekey order="24" intorder="6">galileo2024hallucination</bcf:citekey>
-    <bcf:citekey order="25" intorder="1">dafoe2020open</bcf:citekey>
-    <bcf:citekey order="26" intorder="1">dafoe2020open</bcf:citekey>
+    <bcf:citekey order="1" intorder="1">MarketUS2024</bcf:citekey>
+    <bcf:citekey order="2" intorder="1">arXiv2503</bcf:citekey>
+    <bcf:citekey order="3" intorder="1">IBM2024</bcf:citekey>
+    <bcf:citekey order="4" intorder="1">arXiv2402</bcf:citekey>
+    <bcf:citekey order="5" intorder="1">arXiv2411</bcf:citekey>
+    <bcf:citekey order="6" intorder="1">MIT_Media2025</bcf:citekey>
+    <bcf:citekey order="7" intorder="1">Cognizant2025</bcf:citekey>
+    <bcf:citekey order="8" intorder="1">ScienceDirect_Agentic2025</bcf:citekey>
+    <bcf:citekey order="9" intorder="1">arXiv2503</bcf:citekey>
+    <bcf:citekey order="10" intorder="1">LinkedIn_Sharda2025</bcf:citekey>
+    <bcf:citekey order="11" intorder="1">arXiv2506</bcf:citekey>
+    <bcf:citekey order="12" intorder="1">MarketUS2024</bcf:citekey>
+    <bcf:citekey order="13" intorder="1">Galileo2025</bcf:citekey>
+    <bcf:citekey order="14" intorder="1">LinkedIn_Sharda2025</bcf:citekey>
+    <bcf:citekey order="15" intorder="1">ACM2025</bcf:citekey>
+    <bcf:citekey order="16" intorder="1">ScienceDirect_AgentAI2025</bcf:citekey>
+    <bcf:citekey order="17" intorder="1">Medium_Masood2024</bcf:citekey>
+    <bcf:citekey order="18" intorder="1">MIT_Media2025</bcf:citekey>
+    <bcf:citekey order="19" intorder="1">Medium_Felix2024</bcf:citekey>
+    <bcf:citekey order="20" intorder="1">Milvus2025</bcf:citekey>
+    <bcf:citekey order="21" intorder="1">GoogleResearch_SocialLearning2021</bcf:citekey>
+    <bcf:citekey order="22" intorder="1">DeepMind_Bartering</bcf:citekey>
+    <bcf:citekey order="23" intorder="1">Nature2025</bcf:citekey>
+    <bcf:citekey order="24" intorder="1">SPU2024</bcf:citekey>
+    <bcf:citekey order="25" intorder="1">Phan_Emergence</bcf:citekey>
+    <bcf:citekey order="26" intorder="1">ScienceDirect_MARL2024</bcf:citekey>
+    <bcf:citekey order="27" intorder="1">Lyu2024</bcf:citekey>
+    <bcf:citekey order="28" intorder="1">Meta_Intelligence2024</bcf:citekey>
+    <bcf:citekey order="29" intorder="1">Reddit_LangChain2024</bcf:citekey>
+    <bcf:citekey order="30" intorder="1">arXiv2411</bcf:citekey>
+    <bcf:citekey order="31" intorder="1">arXiv2411</bcf:citekey>
+    <bcf:citekey order="32" intorder="1">ScaleXI2024</bcf:citekey>
+    <bcf:citekey order="33" intorder="1">arXiv2402</bcf:citekey>
+    <bcf:citekey order="34" intorder="1">Springer2024</bcf:citekey>
+    <bcf:citekey order="35" intorder="1">ACM2025</bcf:citekey>
+    <bcf:citekey order="36" intorder="1">Pariveda2025</bcf:citekey>
+    <bcf:citekey order="37" intorder="1">Frontiers2026</bcf:citekey>
+    <bcf:citekey order="38" intorder="1">EnkryptAI2025</bcf:citekey>
+    <bcf:citekey order="39" intorder="1">arXiv2505</bcf:citekey>
+    <bcf:citekey order="40" intorder="1">ScienceDirect_MARL2024</bcf:citekey>
+    <bcf:citekey order="41" intorder="1">Cognizant2025</bcf:citekey>
+    <bcf:citekey order="42" intorder="1">ScienceDirect_AgentAI2025</bcf:citekey>
+    <bcf:citekey order="43" intorder="1">ResearchGate2024</bcf:citekey>
+    <bcf:citekey order="44" intorder="1">IBM_Ethics2024</bcf:citekey>
+    <bcf:citekey order="45" intorder="1">arXiv2502</bcf:citekey>
+    <bcf:citekey order="46" intorder="1">CoopAI2024</bcf:citekey>
+    <bcf:citekey order="47" intorder="1">WEF2024</bcf:citekey>
+    <bcf:citekey order="48" intorder="1">CMU_Tepper2024</bcf:citekey>
+    <bcf:citekey order="49" intorder="1">EY2024</bcf:citekey>
+    <bcf:citekey order="50" intorder="1">Medium_AgentHunter2024</bcf:citekey>
+    <bcf:citekey order="51" intorder="1">WEF2024</bcf:citekey>
+    <bcf:citekey order="52" intorder="1">MarketUS2024</bcf:citekey>
+    <bcf:citekey order="53" intorder="1">arXiv2402</bcf:citekey>
+    <bcf:citekey order="54" intorder="1">GoogleResearch_SocialLearning2021</bcf:citekey>
+    <bcf:citekey order="55" intorder="1">DeepMind_Bartering</bcf:citekey>
+    <bcf:citekey order="56" intorder="1">MIT_Media2025</bcf:citekey>
+    <bcf:citekey order="57" intorder="1">CoopAI2024</bcf:citekey>
+    <bcf:citekey order="58" intorder="1">ScienceDirect_AgentAI2025</bcf:citekey>
+    <bcf:citekey order="59" intorder="1">WEF2024</bcf:citekey>
   </bcf:section>
   <!-- SORTING TEMPLATES -->
   <bcf:sortingtemplate name="nyt">

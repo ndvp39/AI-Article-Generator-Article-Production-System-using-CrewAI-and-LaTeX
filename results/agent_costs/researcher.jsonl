@@ -1,13 +1,4 @@
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 280, "output_tokens": 177, "timestamp": 1781114678.3668087}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 4049, "output_tokens": 122, "timestamp": 1781114685.0304437}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 6492, "output_tokens": 125, "timestamp": 1781114690.1819754}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 8150, "output_tokens": 3910, "timestamp": 1781114769.032397}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 280, "output_tokens": 179, "timestamp": 1781116538.0047204}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 3533, "output_tokens": 119, "timestamp": 1781116543.4541132}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 5533, "output_tokens": 128, "timestamp": 1781116548.9904816}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 7903, "output_tokens": 5812, "timestamp": 1781116666.693274}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 280, "output_tokens": 183, "timestamp": 1781124850.6410778}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 3577, "output_tokens": 118, "timestamp": 1781124856.3464031}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 5686, "output_tokens": 123, "timestamp": 1781124862.1411026}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 8155, "output_tokens": 124, "timestamp": 1781124867.4325063}
-{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 10732, "output_tokens": 5298, "timestamp": 1781124976.0791733}
+{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 280, "output_tokens": 182, "timestamp": 1781215457.2176788}
+{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 3531, "output_tokens": 120, "timestamp": 1781215464.1823895}
+{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 5823, "output_tokens": 125, "timestamp": 1781215469.174637}
+{"agent_name": "researcher", "model": "anthropic/claude-sonnet-4-6", "input_tokens": 7735, "output_tokens": 6425, "timestamp": 1781215589.1853998}

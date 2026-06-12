@@ -1,0 +1,156 @@
+{
+  "timestamp": "2026-06-11T22:59:25.132639+00:00",
+  "total_calls": 27,
+  "total_input_tokens": 308087,
+  "total_output_tokens": 65268,
+  "total_cost_usd": 1.903281,
+  "budget_alert_threshold_usd": 1.0,
+  "budget_alert_triggered": true,
+  "by_agent": [
+    {
+      "agent_name": "bidi_specialist",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 16,
+      "input_tokens": 219687,
+      "output_tokens": 11884,
+      "cost_usd": 0.837321
+    },
+    {
+      "agent_name": "editor",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 1,
+      "input_tokens": 10178,
+      "output_tokens": 9813,
+      "cost_usd": 0.177729
+    },
+    {
+      "agent_name": "graph_generator",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 2,
+      "input_tokens": 20872,
+      "output_tokens": 13049,
+      "cost_usd": 0.258351
+    },
+    {
+      "agent_name": "latex_formatter",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 3,
+      "input_tokens": 32854,
+      "output_tokens": 13863,
+      "cost_usd": 0.306507
+    },
+    {
+      "agent_name": "researcher",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 4,
+      "input_tokens": 17369,
+      "output_tokens": 6852,
+      "cost_usd": 0.154887
+    },
+    {
+      "agent_name": "writer",
+      "model": "anthropic/claude-sonnet-4-6",
+      "calls": 1,
+      "input_tokens": 7127,
+      "output_tokens": 9807,
+      "cost_usd": 0.168486
+    }
+  ],
+  "by_model": [
+    {
+      "model_id": "anthropic/claude-sonnet-4-6",
+      "display_name": "Claude Sonnet 4.6",
+      "provider": "Anthropic",
+      "input_tokens": 308087,
+      "output_tokens": 65268,
+      "cost_usd": 1.903281
+    }
+  ],
+  "cross_model_comparison": {
+    "total_input_tokens": 308087,
+    "total_output_tokens": 65268,
+    "entries": [
+      {
+        "model_id": "claude-haiku-4-5",
+        "display_name": "Claude Haiku 4.5",
+        "provider": "Anthropic",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 0.507542
+      },
+      {
+        "model_id": "anthropic/claude-haiku-4-5",
+        "display_name": "Claude Haiku 4.5",
+        "provider": "Anthropic",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 0.507542
+      },
+      {
+        "model_id": "claude-sonnet-4-6",
+        "display_name": "Claude Sonnet 4.6",
+        "provider": "Anthropic",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 1.903281
+      },
+      {
+        "model_id": "anthropic/claude-sonnet-4-6",
+        "display_name": "Claude Sonnet 4.6",
+        "provider": "Anthropic",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 1.903281
+      },
+      {
+        "model_id": "claude-opus-4-7",
+        "display_name": "Claude Opus 4.7",
+        "provider": "Anthropic",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 9.516405
+      },
+      {
+        "model_id": "gemini/gemini-2.0-flash",
+        "display_name": "Gemini 2.0 Flash",
+        "provider": "Google",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 0.042687
+      },
+      {
+        "model_id": "gemini/gemini-2.5-flash",
+        "display_name": "Gemini 2.5 Flash",
+        "provider": "Google",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 0.255596
+      },
+      {
+        "model_id": "gemini/gemini-1.5-pro",
+        "display_name": "Gemini 1.5 Pro",
+        "provider": "Google",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 0.711449
+      },
+      {
+        "model_id": "gpt-4o-mini",
+        "display_name": "GPT-4o mini",
+        "provider": "OpenAI",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 0.085374
+      },
+      {
+        "model_id": "gpt-4o",
+        "display_name": "GPT-4o",
+        "provider": "OpenAI",
+        "input_tokens": 308087,
+        "output_tokens": 65268,
+        "cost_usd": 1.422897
+      }
+    ]
+  },
+  "duration_seconds": 0.0
+}

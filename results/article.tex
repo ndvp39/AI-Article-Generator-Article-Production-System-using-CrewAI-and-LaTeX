@@ -1,962 +1,581 @@
-% ============================================================
-%  article.tex -- Multi-Agent Systems & Autonomous AI
-%  Main language: Hebrew   Secondary language: English
-%  Compiler: XeLaTeX
-% ============================================================
+% !TEX program = xelatex
+% !TEX encoding = UTF-8
 
-% -- 1. fontspec (must precede polyglossia) -------------------
 \documentclass[12pt,a4paper]{article}
 
+%% ============================================================
+%% 1. FONTSPEC — must come first
+%% ============================================================
 \usepackage{fontspec}
 \setmainfont{Times New Roman}
 \setsansfont{Arial}
 \setmonofont{Courier New}
+\newfontfamily\hebrewfont{Arial}[Script=Hebrew]
 
-% -- 2. polyglossia -------------------------------------------
+%% ============================================================
+%% 2. POLYGLOSSIA — RTL/Hebrew main, English secondary
+%%    (NEVER load bidi separately)
+%% ============================================================
 \usepackage{polyglossia}
-\setmainlanguage{english}
-\setotherlanguage{hebrew}
+\setmainlanguage{hebrew}
+\setotherlanguage{english}
 
-% -- 3. geometry ----------------------------------------------
-\usepackage[
-  a4paper,
-  top=2.5cm, bottom=2.5cm,
-  left=2.5cm, right=2.5cm,
-  headheight=15pt
-]{geometry}
+%% ============================================================
+%% 3. GEOMETRY
+%% ============================================================
+\usepackage[a4paper,
+            top=2.5cm, bottom=2.5cm,
+            left=2.5cm, right=2.5cm,
+            headheight=15pt]{geometry}
 
-% -- 4. fancyhdr ----------------------------------------------
+%% ============================================================
+%% 4. FANCYHDR
+%% ============================================================
 \usepackage{fancyhdr}
-\pagestyle{fancy}
-\fancyhf{}
-\fancyhead[R]{\small \begin{english}Multi-Agent Systems \& Autonomous AI\end{english}}
-\fancyhead[L]{\small \thepage}
-\fancyfoot[C]{\small \textit{\begin{english}MAS -- Comprehensive Review\end{english}}}
-\renewcommand{\headrulewidth}{0.4pt}
-\renewcommand{\footrulewidth}{0.4pt}
 
-% -- 5. graphicx ----------------------------------------------
+%% ============================================================
+%% 5. GRAPHICX
+%% ============================================================
 \usepackage{graphicx}
 
-% -- 6. amsmath + amssymb -------------------------------------
+%% ============================================================
+%% 6. XCOLOR
+%% ============================================================
+\usepackage{xcolor}
+
+%% ============================================================
+%% 7. MATH
+%% ============================================================
 \usepackage{amsmath}
 \usepackage{amssymb}
 
-% -- 7. booktabs + tabularx -----------------------------------
+%% ============================================================
+%% 8. TABLES
+%% ============================================================
 \usepackage{booktabs}
 \usepackage{tabularx}
 
-% -- 8. tikz --------------------------------------------------
-\usepackage{tikz}
-\usetikzlibrary{shapes.geometric,arrows.meta,positioning,fit,backgrounds}
-
-% -- 9. biblatex ----------------------------------------------
-\usepackage[
-  backend=biber,
-  style=authoryear,
-  sorting=nyt,
-  maxbibnames=5
-]{biblatex}
+%% ============================================================
+%% 9. BIBLATEX
+%% ============================================================
+\usepackage[backend=biber, style=authoryear]{biblatex}
 \addbibresource{references.bib}
 
-% -- 10. hyperref ---------------------------------------------
-\usepackage[
-  colorlinks=true,
-  linkcolor=blue!70!black,
-  citecolor=green!50!black,
-  urlcolor=blue!60!black
-]{hyperref}
+%% ============================================================
+%% 10. HYPERREF — must be LAST
+%% ============================================================
+\usepackage[colorlinks=true,
+            linkcolor=blue,
+            citecolor=blue,
+            urlcolor=blue]{hyperref}
 
-% -- 11. bidi (MUST be last) ----------------------------------
-\usepackage{bidi}
+%% ============================================================
+%% FANCYHDR SETUP
+%% ============================================================
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\small מערכות רב-סוכניות ובינה מלאכותית אוטונומית}
+\fancyhead[L]{\small \LR{AI Agents — MSC Course, HW3}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
 
-% -- Utility macros -------------------------------------------
-\newcommand{\term}[1]{\LR{\textit{#1}}}
-\newcommand{\fw}[1]{\LR{\texttt{#1}}}
+%% ============================================================
+%% MISC SETTINGS
+%% ============================================================
+\setlength{\parindent}{1.5em}
+\setlength{\parskip}{0.4em}
 
-% -- Inline bibliography via filecontents ---------------------
-\usepackage{filecontents}
-\begin{filecontents}{references.bib}
-@article{wooldridge1995intelligent,
-  author  = {Wooldridge, Michael and Jennings, Nicholas R.},
-  title   = {Intelligent Agents: Theory and Practice},
-  journal = {The Knowledge Engineering Review},
-  year    = {1995},
-  volume  = {10},
-  number  = {2},
-  pages   = {115--152}
-}
-@book{russell2020artificial,
-  author    = {Russell, Stuart and Norvig, Peter},
-  title     = {Artificial Intelligence: A Modern Approach},
-  edition   = {4},
-  publisher = {Pearson},
-  year      = {2020}
-}
-@article{lowe2017multiagent,
-  author  = {Lowe, Ryan and Wu, Yi and Tamar, Aviv and Harb, Jean and
-             Abbeel, Pieter and Mordatch, Igor},
-  title   = {Multi-Agent Actor-Critic for Mixed Cooperative-Competitive Environments},
-  journal = {Advances in Neural Information Processing Systems},
-  year    = {2017},
-  volume  = {30}
-}
-@inproceedings{vinyals2019grandmaster,
-  author    = {Vinyals, Oriol and Babuschkin, Igor and Czarnecki, Wojciech M. and others},
-  title     = {Grandmaster Level in {StarCraft II} Using Multi-Agent Reinforcement Learning},
-  booktitle = {Nature},
-  year      = {2019},
-  volume    = {575},
-  pages     = {350--354}
-}
-@article{wang2024survey,
-  author  = {Wang, Lei and Ma, Chen and Feng, Xueyang and others},
-  title   = {A Survey on Large Language Model Based Autonomous Agents},
-  journal = {Frontiers of Computer Science},
-  year    = {2024},
-  volume  = {18},
-  number  = {6},
-  pages   = {186345}
-}
-@misc{autogen2023,
-  author       = {Wu, Qingyun and Bansal, Gagan and Zhang, Jieyu and others},
-  title        = {{AutoGen}: Enabling Next-Gen {LLM} Applications via Multi-Agent Conversation},
-  year         = {2023},
-  howpublished = {arXiv:2308.08155}
-}
-@misc{crewai2024,
-  author       = {Moura, Joao},
-  title        = {{CrewAI}: Framework for Orchestrating Role-Playing Autonomous {AI} Agents},
-  year         = {2024},
-  howpublished = {\url{https://github.com/joaomdmoura/crewai}}
-}
-@misc{langgraph2024,
-  author       = {Chase, Harrison and others},
-  title        = {{LangGraph}: Building Stateful, Multi-Actor Applications with {LLM}s},
-  year         = {2024},
-  howpublished = {\url{https://github.com/langchain-ai/langgraph}}
-}
-@misc{llamaindex2024,
-  author       = {Liu, Jerry and others},
-  title        = {{LlamaIndex}: Data Framework for {LLM} Applications},
-  year         = {2024},
-  howpublished = {\url{https://github.com/run-llama/llama_index}}
-}
-@misc{mcp2024,
-  author       = {{Anthropic}},
-  title        = {Model Context Protocol ({MCP})},
-  year         = {2024},
-  howpublished = {\url{https://modelcontextprotocol.io}}
-}
-@misc{a2a2024,
-  author       = {{Google DeepMind}},
-  title        = {Agent-to-Agent ({A2A}) Communication Protocol},
-  year         = {2024},
-  howpublished = {\url{https://deepmind.google}}
-}
-@article{dafoe2020open,
-  author  = {Dafoe, Allan},
-  title   = {Open Problems in Cooperative {AI}},
-  journal = {arXiv preprint arXiv:2012.08630},
-  year    = {2020}
-}
-@techreport{marketusMAS2024,
-  author      = {{Market.us}},
-  title       = {Multi-Agent Systems Market Report 2024--2034},
-  institution = {Market.us Research},
-  year        = {2024}
-}
-@article{fipa1997,
-  author  = {{FIPA -- Foundation for Intelligent Physical Agents}},
-  title   = {{FIPA} Agent Communication Language Specifications},
-  journal = {FIPA Technical Report},
-  year    = {1997}
-}
-@article{labrou1997kqml,
-  author  = {Labrou, Yannis and Finin, Tim},
-  title   = {A Proposal for a New {KQML} Specification},
-  journal = {Technical Report CS-97-03, University of Maryland Baltimore County},
-  year    = {1997}
-}
-@article{galileo2024hallucination,
-  author  = {{Galileo AI}},
-  title   = {Hallucination Index: Evaluating {LLM} Reliability},
-  journal = {Galileo AI Technical Report},
-  year    = {2024}
-}
-@article{ibm2024enterprise,
-  author  = {{IBM Institute for Business Value}},
-  title   = {Enterprise {AI} Automation Outlook 2024},
-  journal = {IBM Research Report},
-  year    = {2024}
-}
-\end{filecontents}
-
-% =============================================================
+%% ============================================================
+%% BEGIN DOCUMENT
+%% ============================================================
 \begin{document}
 
-% =============================================================
-%  TITLE PAGE
-% =============================================================
+%% ============================================================
+%% TITLE PAGE
+%% ============================================================
 \begin{titlepage}
-  \centering
-  \vspace*{2cm}
+\centering
 
-  {\Huge\bfseries
-   \begin{hebrew}
-   \RL{%
-   \texthebrew{%
-   \char"05DE\char"05E2\char"05E8\char"05DB\char"05D5\char"05EA%
-   \ %
-   \char"05E8\char"05D1-%
-   \char"05E1\char"05D5\char"05DB\char"05E0\char"05D9\char"05D5\char"05EA%
-   \ %
-   \char"05D5\char"05D1\char"05D9\char"05E0\char"05D4%
-   \ %
-   \char"05DE\char"05DC\char"05D0\char"05DB\char"05D5\char"05EA\char"05D9\char"05EA%
-   \ %
-   \char"05D0\char"05D5\char"05D8\char"05D5\char"05E0\char"05D5\char"05DE\char"05D9\char"05EA%
-   }%
-   }
-   \end{hebrew}%
-  }
+\rule{\textwidth}{2pt}
 
-  \vspace{0.5cm}
-  {\large\bfseries
-   \begin{english}Multi-Agent Systems (MAS) \& Autonomous AI\end{english}}
+\vspace{1.5cm}
 
-  \vspace{1.5cm}
-  \rule{0.8\textwidth}{1pt}
+{\LARGE\bfseries מערכות רב-סוכניות ובינה מלאכותית אוטונומית}
 
-  \vspace{1cm}
-  {\large
-   \begin{english}A Comprehensive Review: Architectures, Learning, Frameworks \& Safety\end{english}}
+\vspace{0.5cm}
 
-  \vspace{2cm}
+{\large ארכיטקטורות, מנגנוני תיאום, התנהגויות מתעוררות והדרך לפריסה אחראית}
 
-  \begin{tikzpicture}
-    \node[draw=blue!70!black, fill=blue!5, rounded corners=8pt,
-          minimum width=9cm, minimum height=2.5cm, text width=8.5cm,
-          align=center] {
-      \begin{english}
-      {\bfseries Key Topics}\\[6pt]
-      Agent Architectures $\cdot$ Multi-Agent RL\\
-      Communication Protocols $\cdot$ LLM Frameworks\\
-      Real-World Applications $\cdot$ Safety \& Alignment
-      \end{english}
-    };
-  \end{tikzpicture}
+\vspace{1cm}
 
-  \vfill
+\rule{\textwidth}{1pt}
 
-  {\normalsize
-   \begin{english}
-   Sources: Market.us 2024 $\cdot$ arXiv 2024--2025 $\cdot$
-   DeepMind $\cdot$ Cooperative AI Foundation $\cdot$ IBM $\cdot$ Galileo AI
-   \end{english}}
+\vspace{1.5cm}
 
-  \vspace{0.5cm}
-  {\normalsize \LR{\today}}
+\begin{tabular}{r l}
+\textbf{נושא / \LR{Topic}:}    & מערכות רב-סוכניות ובינה מלאכותית אוטונומית \\[0.6em]
+\textbf{מחבר / \LR{Author}:}   & \LR{Ilya and Nadav} \\[0.6em]
+\textbf{תאריך / \LR{Date}:}    & \LR{\today} \\[0.6em]
+\textbf{קורס / \LR{Course}:}   & \LR{AI Agents --- MSC Course, HW3} \\[0.6em]
+\textbf{מרצה / \LR{Lecturer}:} & \LR{Dr.\ Yoram Segal} \\
+\end{tabular}
 
-  \vspace{0.4cm}
-  \begin{english}
-  \begin{tabular}{rl}
-    \textbf{Author:}   & [Your Name] \\
-    \textbf{Course:}   & AI Agents --- MSC Course, HW3 \\
-    \textbf{Lecturer:} & Dr.\ Yoram Segal \\
-  \end{tabular}
-  \end{english}
+\vspace{2cm}
+
+\rule{\textwidth}{2pt}
+
+\vfill
 \end{titlepage}
 
-% =============================================================
-%  TABLE OF CONTENTS
-% =============================================================
+%% ============================================================
+%% TABLE OF CONTENTS
+%% ============================================================
 \tableofcontents
 \newpage
 
-% =============================================================
-%  ABSTRACT
-% =============================================================
-\begin{abstract}
-\begin{english}
-Multi-Agent Systems (MAS) represent a central paradigm in modern artificial
-intelligence, in which multiple autonomous agents operate in a shared environment,
-coordinate with each other, and achieve goals that cannot be accomplished by a
-single agent. With the rise of Large Language Models (LLMs), new possibilities
-have opened for inter-agent coordination, autonomous planning, and execution of
-complex tasks. This article surveys the broad landscape of MAS: from foundational
-concepts to contemporary frameworks, with emphasis on safety, alignment, and
-reliability challenges. The global MAS market is projected to grow from \$15B
-in 2024 to approximately \$375B in 2034, representing a compound annual growth
-rate of approximately 48.6\% \autocite{marketusMAS2024}.
-\end{english}
-\end{abstract}
+%% ============================================================
+%% ABSTRACT
+%% ============================================================
+\section*{תקציר}
+\addcontentsline{toc}{section}{תקציר}
+
+מערכות רב-סוכניות (\LR{Multi-Agent Systems --- MAS}) מהוות אחת הפרדיגמות המשפיעות והמרתקות ביותר בתחום הבינה המלאכותית המודרנית. הרעיון הבסיסי הוא פשוט בתיאורו אך עמוק בהשלכותיו: במקום להסתמך על סוכן יחיד כדי לפתור בעיה מורכבת, ניתן לפרוס רשת של סוכנים אוטונומיים, כל אחד בעל יכולות תפיסה, הסקה ופעולה, הפועלים יחד --- ולעיתים בתחרות --- כדי להשיג מטרות שאף סוכן בודד אינו מסוגל להגיע אליהן לבדו.
+
+המחקר הנוכחי מציג סקירה מקיפה של תחום \LR{MAS}, החל מהיסודות התיאורטיים והארכיטקטוניים, דרך מנגנוני התיאום והתקשורת בין סוכנים, ועד להתנהגויות המתעוררות (\LR{emergent behaviors}) הנובעות מאינטראקציות מקומיות פשוטות. כמו כן, הסקירה עוסקת בדור החדש של מסגרות \LR{MAS} המבוססות על מודלי שפה גדולים (\LR{Large Language Models --- LLMs}), ביישומים בעולם האמיתי, ובאתגרים האתיים והבטיחותיים הנלווים לפריסת בינה מלאכותית אוטונומית בקנה מידה גדול.
+
+שוק ה-\LR{MAS} העולמי הגיע לשווי של 3.01 מיליארד דולר בארצות הברית בלבד בשנת 2024, עם קצב צמיחה שנתי מורכב (\LR{CAGR}) של 45.1\%, המונע על ידי אוטומציה חכמה ורובוטיקה אוטונומית \cite{MarketUS2024}. נתון זה ממחיש את הקפיצה שעבר התחום מניסויי מעבדה לפריסה תעשייתית ממשית.
+
+הסקירה מאורגנת בשישה פרקים מרכזיים: הפרק הראשון עוסק ביסודות ובארכיטקטורות של \LR{MAS}; הפרק השני בוחן את מנגנוני התיאום, התקשורת והשיתוף פעולה; הפרק השלישי מתמקד בלמידת חיזוק רב-סוכנית (\LR{Multi-Agent Reinforcement Learning --- MARL}) ובהתנהגויות מתעוררות; הפרק הרביעי סוקר את מסגרות \LR{MAS} המבוססות על \LR{LLMs} כגון \LR{AutoGen}, \LR{CrewAI} ו-\LR{LangGraph}; הפרק החמישי מציג יישומים בעולם האמיתי בתחומי הבריאות, הרובוטיקה, הרכבים האוטונומיים והאוטומציה העסקית; ולבסוף, הפרק השישי דן באתגרים האתיים, הבטיחותיים והרגולטוריים.
+
+המסקנה המרכזית של מחקר זה היא כי \LR{MAS} מייצגת לא רק כלי טכנולוגי חדש, אלא שינוי פרדיגמה יסודי באופן שבו אנו מתכננים, פורסים ומנהלים מערכות בינה מלאכותית. עם זאת, עוצמתה של פרדיגמה זו מחייבת מסגרות ממשל אחראיות, שקיפות ואחריותיות ברורה --- שכן כשלים במערכות \LR{MAS} אינם רק כשלים טכניים, אלא עשויים להיות בעלי השלכות חברתיות, כלכליות ואתיות מרחיקות לכת.
 
 \newpage
 
-% =============================================================
-%  SECTION 1 -- INTRODUCTION
-% =============================================================
-\section{\begin{english}Introduction: The World of Autonomous Agents\end{english}}
-
-\subsection{\begin{english}What is an Autonomous Agent?\end{english}}
-
-\begin{english}
-An autonomous agent is a computational entity that operates in an environment,
-perceives it through sensors, and influences it through actuators.
-According to \textcite{wooldridge1995intelligent}, an agent must possess four
-core properties:
-\end{english}
-
-\begin{enumerate}
-  \item \begin{english}\textbf{Autonomy} --- acting without constant direct human intervention.\end{english}
-  \item \begin{english}\textbf{Sociability} --- ability to communicate with other agents.\end{english}
-  \item \begin{english}\textbf{Reactivity} --- perceiving and responding to environmental changes.\end{english}
-  \item \begin{english}\textbf{Proactiveness} --- taking goal-directed initiative.\end{english}
-\end{enumerate}
-
-\subsection{\begin{english}Agent Architectures: Historical Evolution\end{english}}
-
-\begin{english}
-The evolution of agent architectures spans five major stages, illustrated in the
-visualisation dashboard (see Section~\ref{sec:visualization}):
-\end{english}
-
-\begin{description}
-  \item[\begin{english}1980--1995\end{english}]
-        \begin{english}\textbf{Simple Rule-Based Agents} --- rigid \term{if-then} logic with no learning capability.\end{english}
-  \item[\begin{english}1995--2005\end{english}]
-        \begin{english}\textbf{Model-Based Agents} --- internal representation of world state.\end{english}
-  \item[\begin{english}2005--2015\end{english}]
-        \begin{english}\textbf{Goal \& Utility Agents} --- optimisation of utility functions.\end{english}
-  \item[\begin{english}2015--2020\end{english}]
-        \begin{english}\textbf{Learning Agents} --- Reinforcement Learning (\term{RL}).\end{english}
-  \item[\begin{english}2020--Present\end{english}]
-        \begin{english}\textbf{LLM-Powered Agents} --- planning, reasoning, and linguistic coordination.\end{english}
-\end{description}
-
-\subsection{\begin{english}MAS Architectures: A Comparison\end{english}}
-
-\begin{english}
-Multi-agent systems can be classified by their organisational structure
-\autocite{russell2020artificial}:
-\end{english}
-
-\begin{description}
-  \item[\term{Hierarchical}]
-        \begin{english}Hierarchical structure with an orchestrator agent and sub-agents.
-        Enables simple coordination but may create bottlenecks.\end{english}
-  \item[\term{Peer-to-Peer}]
-        \begin{english}All agents are equal; decentralised coordination.
-        More fault-tolerant but harder to manage.\end{english}
-  \item[\term{Hybrid}]
-        \begin{english}Combines both approaches: hierarchical management at the high level
-        and peer-to-peer coordination at the low level.\end{english}
-\end{description}
-
-\subsection{\begin{english}Key Formulae in MAS Theory\end{english}}
-
-\subsubsection{\begin{english}Utility Function and Reward\end{english}}
-
-\begin{english}
-In the formal definition of a rational agent, the agent seeks the action that
-maximises expected utility:
-\end{english}
-
-\begin{english}
-\begin{equation}
-  \pi^{*}(s) = \arg\max_{a \in \mathcal{A}} \mathbb{E}\!\left[
-    \sum_{t=0}^{\infty} \gamma^{t} r_{t+1}
-    \;\middle|\; s_0 = s,\; \pi
-  \right]
-  \label{eq:optimal_policy}
-\end{equation}
-\end{english}
-
-\begin{english}
-where $\pi^{*}$ is the optimal policy, $\gamma \in [0,1)$ is the discount factor,
-$r_{t}$ is the reward at step $t$, and $\mathcal{A}$ is the action space.
-\end{english}
-
-\subsubsection{\begin{english}Bellman Equation for a Multi-Agent Environment\end{english}}
-
-\begin{english}
-In an environment with $n$ agents, the joint state value is defined by:
-\end{english}
-
-\begin{english}
-\begin{equation}
-  V^{\boldsymbol{\pi}}(\mathbf{s}) = \sum_{i=1}^{n}
-  \mathbb{E}_{\boldsymbol{\pi}}\!\left[
-    \sum_{t=0}^{\infty} \gamma^{t} r^{(i)}_{t}
-    \;\middle|\; \mathbf{s}_0 = \mathbf{s}
-  \right]
-  \label{eq:bellman_mas}
-\end{equation}
-\end{english}
-
-\begin{english}
-where $\mathbf{s} = (s^{(1)}, s^{(2)}, \ldots, s^{(n)})$ is the joint system state
-and $r^{(i)}_{t}$ is the reward of agent $i$ at step $t$.
-\end{english}
-
-\subsubsection{\begin{english}MAS Market CAGR Model\end{english}}
-
-\begin{english}
-The MAS market forecast relies on the Compound Annual Growth Rate (CAGR) model:
-\end{english}
-
-\begin{english}
-\begin{equation}
-  V(t) = V_0 \cdot (1 + r)^{t}
-  \label{eq:cagr}
-\end{equation}
-\end{english}
-
-\begin{english}
-where $V_0 = \$15\text{B}$ (2024 baseline), $r = 0.486$ (CAGR of 48.6\%),
-and $t$ is the number of years from 2024. At $t = 10$ (year 2034):
-\end{english}
-
-\begin{english}
-\begin{align}
-  V(10) &= 15 \cdot (1.486)^{10} \notag \\
-        &\approx 15 \cdot 25.0    \notag \\
-        &\approx \$375\text{B}
-  \label{eq:market_forecast}
-\end{align}
-\end{english}
-
-\subsection{\begin{english}Formal Definition of MAS\end{english}}
-
-\begin{english}
-A Multi-Agent System can be formally defined as a tuple:
-\begin{equation}
-  \mathcal{M} = \langle
-    \mathcal{I},\;
-    \mathcal{E},\;
-    \{A_i\}_{i \in \mathcal{I}},\;
-    \{\Omega_i\}_{i \in \mathcal{I}},\;
-    \mathcal{T},\;
-    \{R_i\}_{i \in \mathcal{I}}
-  \rangle
-  \label{eq:mas_formal}
-\end{equation}
-where $\mathcal{I} = \{1, 2, \ldots, n\}$ is the set of agents, $\mathcal{E}$ is
-the shared environment, $A_i$ is the action space of agent $i$, $\Omega_i$ is the
-observation space, $\mathcal{T}$ is the joint transition function, and $R_i$ is
-the reward function of agent $i$.
-\end{english}
-
-\subsection{\begin{english}Market Forecast\end{english}}
-
-\begin{english}
-The global MAS market is in rapid growth. According to \textcite{marketusMAS2024},
-it is expected to surpass the \$375B threshold by 2034. Key growth drivers include:
-\end{english}
-
-\begin{itemize}
-  \item \begin{english}\textbf{LLM Maturity}: improvements in reasoning, memory, and tool-calling capabilities.\end{english}
-  \item \begin{english}\textbf{Enterprise Demand}: automation of complex business processes \autocite{ibm2024enterprise}.\end{english}
-  \item \begin{english}\textbf{Academic Research}: sharp rise in arXiv publications on autonomous agents.\end{english}
-  \item \begin{english}\textbf{Cloud Infrastructure}: low-cost compute availability for multi-agent deployments.\end{english}
-\end{itemize}
-
-% =============================================================
-%  SECTION 2 -- COMMUNICATION PROTOCOLS
-% =============================================================
-\section{\begin{english}Agent Communication Protocols\end{english}}
-
-\subsection{\begin{english}Historical Background\end{english}}
-
-\begin{english}
-Inter-agent communication is one of the central challenges in MAS.
-The first protocols were developed in the 1990s:
-\end{english}
-
-\subsubsection{\begin{english}KQML (1993--1999)\end{english}}
-
-\begin{english}
-\term{Knowledge Query and Manipulation Language} (KQML) was one of the first
-protocols for inter-agent communication \autocite{labrou1997kqml}. It defined a
-set of \term{performatives} --- speech acts such as \fw{TELL}, \fw{ASK},
-and \fw{SUBSCRIBE}.
-\end{english}
-
-\subsubsection{\begin{english}FIPA (1997--2005)\end{english}}
-
-\begin{english}
-\term{Foundation for Intelligent Physical Agents} (FIPA) developed more
-comprehensive standards \autocite{fipa1997}, including an Agent Communication
-Language (ACL) and interaction protocols.
-\end{english}
-
-\subsection{\begin{english}Contemporary Protocols: The LLM Era\end{english}}
-
-\subsubsection{\begin{english}Model Context Protocol (MCP)\end{english}}
-
-\begin{english}
-Anthropic's MCP \autocite{mcp2024} defines a unified interface between LLM agents
-and tools / data sources. The protocol is based on JSON-RPC and enables:
-\end{english}
-
-\begin{itemize}
-  \item \begin{english}Access to external tools\end{english}
-  \item \begin{english}Resource reading\end{english}
-  \item \begin{english}Structured prompt usage\end{english}
-\end{itemize}
-
-\subsubsection{\begin{english}Agent-to-Agent (A2A) by Google\end{english}}
-
-\begin{english}
-Google DeepMind's A2A protocol \autocite{a2a2024} focuses on direct agent-to-agent
-communication, defining \term{Agent Cards} --- standardised capability descriptors.
-\end{english}
-
-\subsubsection{\begin{english}Agent Communication Protocol (ACP)\end{english}}
-
-\begin{english}
-ACP (2024) is an open protocol based on REST API, designed to enable asynchronous
-communication between agents in production environments.
-\end{english}
-
-% =============================================================
-%  SECTION 3 -- MARL
-% =============================================================
-\section{\begin{english}Multi-Agent Reinforcement Learning (MARL)\end{english}}
-
-\subsection{\begin{english}Introduction to MARL\end{english}}
-
-\begin{english}
-Multi-Agent Reinforcement Learning (MARL) extends the classical RL framework to
-environments with multiple simultaneously learning agents \autocite{lowe2017multiagent}.
-The central challenge is \textbf{non-stationarity}: as all agents learn
-simultaneously, the environment becomes dynamic from each agent's perspective.
-\end{english}
-
-\subsection{\begin{english}MARL Frameworks\end{english}}
-
-\subsubsection{\begin{english}Fully Cooperative\end{english}}
-
-\begin{english}
-All agents share a common reward function:
-\end{english}
-
-\begin{english}
-\begin{equation}
-  R_{\text{cooperative}} = \frac{1}{n} \sum_{i=1}^{n} r^{(i)}
-  \label{eq:cooperative_reward}
-\end{equation}
-\end{english}
-
-\subsubsection{\begin{english}Fully Competitive (Zero-Sum)\end{english}}
-
-\begin{english}
-\begin{equation}
-  \sum_{i=1}^{n} r^{(i)} = 0 \quad \forall\, t
-  \label{eq:zero_sum}
-\end{equation}
-\end{english}
-
-\subsubsection{\begin{english}Mixed Setting\end{english}}
-
-\begin{english}
-Most real-world environments are mixed --- cooperation within groups and competition
-between groups.
-\end{english}
-
-\subsection{\begin{english}Emergent Behaviour\end{english}}
-
-\begin{english}
-One of the most fascinating phenomena in MARL is the emergence of complex strategies
-that were not explicitly programmed. \textcite{vinyals2019grandmaster} demonstrated
-this in StarCraft~II, where agents developed sophisticated military tactics.
-The emergence threshold can be quantified by a sigmoid model:
-\end{english}
-
-\begin{english}
-\begin{equation}
-  C(t) = \frac{1}{1 + e^{-k(t - t_0)}} \cdot C_{\max}
-  \label{eq:emergence_sigmoid}
-\end{equation}
-\end{english}
-
-\begin{english}
-where $C(t)$ is the cooperation metric at step $t$, $k$ is the learning rate,
-$t_0$ is the emergence threshold, and $C_{\max}$ is the maximum value.
-\end{english}
-
-% =============================================================
-%  SECTION 4 -- LLM FRAMEWORKS
-% =============================================================
-\section{\begin{english}LLM-Powered Agent Frameworks\end{english}}
-
-\subsection{\begin{english}Introduction\end{english}}
-
-\begin{english}
-The rise of LLMs such as GPT-4, Claude, and Gemini has created a new wave of
-frameworks for building multi-agent systems \autocite{wang2024survey}. These
-frameworks leverage the reasoning, planning, and tool-use capabilities of LLMs.
-\end{english}
-
-\subsection{\begin{english}AutoGen (Microsoft)\end{english}}
-
-\begin{english}
-\fw{AutoGen} \autocite{autogen2023} is a framework from Microsoft Research enabling
-multi-agent conversational workflows. Key features:
-\end{english}
-
-\begin{itemize}
-  \item \begin{english}\textbf{Conversational Interface}: agents communicate via natural-language messages.\end{english}
-  \item \begin{english}\textbf{Code Execution}: built-in support for Python and Bash execution.\end{english}
-  \item \begin{english}\textbf{Flexibility}: supports a wide range of LLMs (commercial and open-source).\end{english}
-  \item \begin{english}\textbf{Research}: particularly suited for academic experimentation.\end{english}
-\end{itemize}
-
-\subsection{\begin{english}CrewAI\end{english}}
-
-\begin{english}
-\fw{CrewAI} \autocite{crewai2024} introduces the paradigm of \textbf{role-based agent teams}.
-Each agent is defined with:
-\end{english}
-
-\begin{itemize}
-  \item \begin{english}\textbf{Role}: definition of what the agent does.\end{english}
-  \item \begin{english}\textbf{Goal}: what the agent aims to achieve.\end{english}
-  \item \begin{english}\textbf{Backstory}: context and personality.\end{english}
-  \item \begin{english}\textbf{Tools}: external capabilities.\end{english}
-\end{itemize}
-
-\subsection{\begin{english}LangGraph\end{english}}
-
-\begin{english}
-\fw{LangGraph} \autocite{langgraph2024} represents a graph-based approach to agent
-coordination. The graph is defined as a DAG (Directed Acyclic Graph) or a cyclic
-graph with control mechanisms. Well-suited for production environments requiring
-high reliability.
-\end{english}
-
-\subsection{\begin{english}LlamaIndex\end{english}}
-
-\begin{english}
-\fw{LlamaIndex} \autocite{llamaindex2024} specialises in integrating LLMs with
-external data sources via Retrieval-Augmented Generation (RAG).
-\end{english}
-
-\subsection{\begin{english}Framework Comparison Table\end{english}}
-
-\begin{table}[ht]
+%% ============================================================
+%% INTRODUCTION
+%% ============================================================
+\section{הקדמה}
+
+\subsection{הרקע ההיסטורי והמוטיבציה}
+
+הרעיון של מערכות מרובות-סוכנים אינו חדש. שורשיו נטועים בתחומים מגוונים: בתורת המשחקים (\LR{Game Theory}) שפותחה על ידי ג'ון נאש ואחרים בשנות ה-40 וה-50 של המאה הקודמת; בביולוגיה של נחילים ומושבות חרקים, שם פרטים פשוטים רבים יוצרים יחד מבנים מורכבים להפליא; ובמדעי המחשב המבוזרים, שם מחקרים על מערכות מקבילות הניחו את הבסיס לתיאוריית הסוכנים. עם זאת, המהפכה האמיתית החלה בעשור האחרון, כאשר שלושה גורמים התכנסו יחד: הפריצה של מודלי שפה גדולים (\LR{LLMs}), הזמינות של כוח חישוב נרחב בענן, ועלייתן של מסגרות תכנות (\LR{frameworks}) פתוחות המאפשרות לכל מפתח לבנות מערכות \LR{MAS} מתוחכמות.
+
+כיום, מערכות \LR{MAS} אינן עוד נחלתם הבלעדית של מעבדות מחקר. הן פועלות בבתי חולים, בבורסות ניירות ערך, בצי רכבים אוטונומיים, ברשתות חשמל חכמות ובמוקדי שירות לקוחות. ההבנה של ארכיטקטורות אלו, יכולותיהן ומגבלותיהן, הפכה לכישור הכרחי עבור כל מי שעוסק בתחום הבינה המלאכותית.
+
+\subsection{מהו סוכן אוטונומי?}
+
+לפני שניתן להבין מערכת רב-סוכנית, יש להגדיר מהו סוכן (\LR{agent}) בהקשר זה. סוכן אוטונומי הוא ישות חישובית המסוגלת לתפוס את סביבתה, לעבד מידע, לקבל החלטות ולנקוט פעולות --- כל זאת ללא התערבות אנושית מתמדת. המרכיבים הבסיסיים של סוכן מודרני כוללים שכבת תפיסה (\LR{perception layer}) לאיסוף מידע מהסביבה, מנוע הסקה ותכנון (\LR{reasoning and planning engine}) לעיבוד המידע וקבלת החלטות, מודול זיכרון (\LR{memory module}) לשמירת הקשר ולמידה, ממשק שימוש בכלים (\LR{tool-use interface}) לאינטראקציה עם מערכות חיצוניות, ומבצע פעולות (\LR{action executor}) לביצוע ההחלטות בפועל \cite{arXiv2503}.
+
+ההבחנה בין סוגי הסוכנים חיונית להבנת \LR{MAS}: סוכנים ריאקטיביים (\LR{reactive agents}) מגיבים ישירות לגירויים ללא תכנון מוקדם; סוכנים דלברטיביים (\LR{deliberative agents}) מבצעים תכנון מבוסס מטרות; סוכנים היברידיים משלבים את שתי הגישות; וסוכנים לומדים (\LR{learning agents}) מסתגלים ומשפרים את ביצועיהם על סמך ניסיון \cite{IBM2024}. בעולם ה-\LR{MAS} המודרני, רוב הסוכנים הם היברידיים ולומדים, מה שמוסיף שכבות של מורכבות ועוצמה כאחד.
+
+\subsection{מדוע MAS?}
+
+השאלה הבסיסית היא: מדוע נדרשת מערכת רב-סוכנית? מה לא ניתן להשיג עם סוכן יחיד חזק מספיק? התשובה נעוצה בכמה עקרונות יסוד:
+
+\textbf{ראשית, חלוקת עבודה וספציאליזציה.} בדומה לאופן שבו צוות אנושי מורכב מאנשים בעלי מומחיות שונה, מערכת \LR{MAS} יכולה לכלול סוכנים המתמחים בתחומים שונים --- אחד לאיסוף מידע, אחר לניתוח, שלישי לכתיבה, ורביעי לאימות. כל סוכן מצטיין בתחומו, והמכלול גדול מסכום חלקיו.
+
+\textbf{שנית, מקביליות וסקלביליות.} בעוד שסוכן יחיד חייב לבצע משימות ברצף, מערכת \LR{MAS} יכולה לעבד משימות מרובות במקביל. זה מאפשר פתרון בעיות בקנה מידה שאינו ניתן להשגה בגישה סדרתית \cite{arXiv2402}.
+
+\textbf{שלישית, עמידות בפני כשלים.} אם סוכן אחד נכשל, המערכת כולה אינה קורסת בהכרח. סוכנים אחרים יכולים להשלים את המשימה, מה שמקנה לארכיטקטורת \LR{MAS} עמידות (\LR{resilience}) טבעית.
+
+\textbf{רביעית, פתרון בעיות מבוזרות.} בעיות רבות בעולם האמיתי הן מבוזרות מטבען --- חלוקת משאבים, ניהול תנועה, ניטור רשת חשמל. מערכות \LR{MAS} מסוגלות לטפל בבעיות אלו בצורה טבעית, כאשר כל סוכן מנהל חלק מהמרחב הבעייתי.
+
+\subsection{הנוף הטכנולוגי הנוכחי}
+
+שנות 2024--2025 סימנו נקודת מפנה בתחום \LR{MAS}. עם הבשלות של \LR{LLMs} כגון \LR{GPT-4}, \LR{Claude} ו-\LR{Gemini}, הפך לאפשרי לבנות סוכנים בעלי יכולות הסקה, תכנון ותקשורת ברמה שלא ניתן היה לדמיין שנים ספורות קודם לכן. מסגרות כמו \LR{AutoGen} של \LR{Microsoft}, \LR{CrewAI} ו-\LR{LangGraph} הפכו את בניית מערכות \LR{MAS} לנגישה לקהל רחב של מפתחים \cite{arXiv2411}.
+
+בד בבד, עלו שאלות מהותיות. כאשר מיליוני סוכני \LR{AI} פועלים בו-זמנית ברשתות גלובליות, מה קורה כאשר כולם מגיעים לאותה "אסטרטגיה אופטימלית"? מחקר \LR{MIT Media Lab} מזהיר מפני "\LR{digital stampedes}" --- מצבים שבהם התנהגות מסונכרנת של סוכנים מרובים יוצרת סיכונים מערכתיים בלתי צפויים \cite{MIT_Media2025}. שאלות אלו, של בטיחות, אתיקה וממשל, הן חלק בלתי נפרד מהנוף הטכנולוגי הנוכחי.
+
+\subsection{מבנה המאמר}
+
+המאמר הנוכחי מאורגן כך שיוביל את הקורא מהבסיס התיאורטי אל הפרקטיקה התעשייתית, ומשם אל האתגרים העתידיים. פרק 1 מניח את היסודות הארכיטקטוניים; פרק 2 בוחן את מנגנוני התיאום; פרק 3 מתמקד בלמידה ובהתנהגויות מתעוררות; פרק 4 סוקר את מסגרות ה-\LR{LLM} המובילות; פרק 5 מציג יישומים מהעולם האמיתי; ופרק 6 דן באתיקה ובממשל. לבסוף, פרק המסקנות מציע השקפה כוללת ותחזיות לעתיד.
+
+המאמר הנוכחי מבוסס על מחקר עדכני, כולל פרסומים מ-2024 ו-2025, ומשלב מקורות אקדמיים מובילים (\LR{Nature}, \LR{ScienceDirect}, \LR{Frontiers}, \LR{Springer}, \LR{ACM}), שרתי \LR{preprint} (\LR{arXiv}), מוסדות טכנולוגיים מרכזיים (\LR{IBM}, \LR{MIT}, \LR{DeepMind}, \LR{Google Research}, \LR{Carnegie Mellon}) וגופים תעשייתיים ורגולטוריים (\LR{EY}, \LR{World Economic Forum}, \LR{Cognizant}). שילוב מקורות אלו מאפשר תמונה מלאה ומאוזנת של המצב הנוכחי בתחום.
+
+\newpage
+
+%% ============================================================
+%% CHAPTER 1
+%% ============================================================
+\section{פרק 1: יסודות וארכיטקטורה של מערכות רב-סוכניות}
+
+\subsection{הגדרה ורקע תיאורטי}
+
+מערכת רב-סוכנית (\LR{Multi-Agent System --- MAS}) מוגדרת כרשת של סוכני \LR{AI} אוטונומיים המשתפים פעולה --- ולעיתים מתחרים --- כדי להשיג מטרות מורכבות. כל סוכן תופס את סביבתו, מקבל החלטות עצמאיות ומתקשר עם סוכנים אחרים \cite{Cognizant2025}. הגדרה זו, פשוטה ככל שתהיה, מסתירה עושר תיאורטי עצום. שאלות כגון: כיצד מוגדרות מטרות משותפות? כיצד נפתרים קונפליקטים בין סוכנים? כיצד נשמרת עקביות המצב המערכתי? --- כל אלו הן שאלות פתוחות שחוקרים מתמודדים איתן עד היום.
+
+הבחנה חשובה שיש להבהיר בשלב מוקדם היא בין "\LR{AI Agents}" לבין "\LR{Agentic AI}". בעוד שסוכני \LR{AI} (\LR{AI Agents}) הם ישויות אוטונומיות בעלות יכולות מוגדרות, "\LR{Agentic AI}" מתייחס לארכיטקטורות מתעוררות שבהן סוכנים מרובים ומתמחים פועלים ברמת אוטונומיה גבוהה יותר, עם תכנון לטווח ארוך ויכולת מטרה-ממוקדת (\LR{goal-directedness}) מוגברת \cite{ScienceDirect_Agentic2025}. ההבחנה הטקסונומית הזו חשובה לא רק מבחינה אקדמית, אלא גם מבחינה פרקטית ורגולטורית.
+
+\subsection{רכיבי הסוכן המודרני}
+
+ארכיטקטורת הסוכן המודרני, כפי שעולה מניתוח הספרות העדכנית, כוללת חמישה מרכיבים עיקריים \cite{arXiv2503}:
+
+\textbf{שכבת תפיסה (\LR{Perception Layer}):} זהו ה"חושים" של הסוכן. הוא אוסף מידע מהסביבה --- בין אם מדובר בנתונים גולמיים, בטקסט, בתמונות, בפלט ממכשירי חיישנים, או בהודעות מסוכנים אחרים. שכבת התפיסה מבצעת עיבוד ראשוני ומכינה את המידע לשלב ההסקה.
+
+\textbf{מנוע הסקה ותכנון (\LR{Reasoning and Planning Engine}):} זהו "המוח" של הסוכן. במערכות מודרניות, מרכיב זה מבוסס לעיתים קרובות על \LR{LLM}, המאפשר הסקה שפתית, תכנון רב-שלבי ופתרון בעיות מורכבות. הסוכן מנתח את המידע שנאסף, מעריך אפשרויות שונות ומחליט על מהלך הפעולה המיטבי.
+
+\textbf{מודול זיכרון (\LR{Memory Module}):} סוכנים אוטונומיים זקוקים לזיכרון כדי לשמור על הקשר לאורך זמן. קיימים שני סוגים עיקריים: זיכרון קצר-טווח (\LR{in-context memory}) המאחסן את ההיסטוריה הנוכחית של השיחה, וזיכרון ארוך-טווח (\LR{external memory}) המאחסן ידע מצטבר במאגרי מידע וקטוריים.
+
+\textbf{ממשק שימוש בכלים (\LR{Tool-Use Interface}):} סוכנים מודרניים אינם מוגבלים ליכולותיהם הפנימיות. הם יכולים להשתמש בכלים חיצוניים --- \LR{APIs}, מנועי חיפוש, מחשבונים, מאגרי מידע, ואפילו כלים נוספים --- כדי להרחיב את יכולותיהם.
+
+\textbf{מבצע פעולות (\LR{Action Executor}):} לאחר קבלת ההחלטה, הסוכן חייב לבצע אותה בפועל. מרכיב זה ממיר החלטות לפעולות קונקרטיות --- שליחת הודעות, ביצוע קוד, קריאת \LR{APIs}, עדכון מסדי נתונים, ועוד.
+
+\begin{figure}[h]
   \centering
-  \caption{\begin{english}Comparison of LLM-Powered MAS Frameworks\end{english}}
-  \label{tab:frameworks}
-  \begin{english}
-  \begin{tabularx}{\textwidth}{lXXXX}
-    \toprule
-    \textbf{Criterion} & \textbf{AutoGen} & \textbf{CrewAI} & \textbf{LangGraph} & \textbf{LlamaIndex} \\
-    \midrule
-    Ease of Use           & High (4/5)      & Very High (5/5) & Low (2/5)       & Medium (3/5)    \\
-    Production Readiness  & Medium (3/5)    & High (4/5)      & Very High (5/5) & High (4/5)      \\
-    Flexibility           & High (4/5)      & Medium (3/5)    & Very High (5/5) & High (4/5)      \\
-    Research Suitability  & Very High (5/5) & Medium (3/5)    & Medium (3/5)    & High (4/5)      \\
-    Primary Paradigm      & Conversational  & Role-based Teams & Graph-based    & RAG / Data      \\
-    \bottomrule
-  \end{tabularx}
-  \end{english}
-  \vspace{4pt}
-  {\small \begin{english}Source: author analysis based on \autocite{autogen2023,crewai2024,langgraph2024,llamaindex2024}\end{english}}
-\end{table}
-
-% =============================================================
-%  SECTION 5 -- REAL-WORLD APPLICATIONS
-% =============================================================
-\section{\begin{english}Real-World Applications\end{english}}
-
-\subsection{\begin{english}Healthcare\end{english}}
-
-\begin{english}
-MAS in medicine includes:
-\end{english}
-
-\begin{itemize}
-  \item \begin{english}\textbf{Collaborative Diagnosis}: specialised agents across medical domains cooperate for diagnosis.\end{english}
-  \item \begin{english}\textbf{Hospital Management}: optimisation of schedules, inventory, and resource allocation.\end{english}
-  \item \begin{english}\textbf{Drug Discovery}: agents run large-scale \textit{in silico} experiments.\end{english}
-\end{itemize}
-
-\subsection{\begin{english}Finance\end{english}}
-
-\begin{english}
-In the financial domain, MAS are used for:
-\end{english}
-
-\begin{itemize}
-  \item \begin{english}\textbf{Algorithmic Trading}: agents manage investment portfolios and react to market signals.\end{english}
-  \item \begin{english}\textbf{Fraud Detection}: agent networks analyse transactions in real time.\end{english}
-  \item \begin{english}\textbf{Risk Management}: systemic risk assessment across complex portfolios.\end{english}
-\end{itemize}
-
-\subsection{\begin{english}Robotics and Autonomous Vehicles\end{english}}
-
-\begin{itemize}
-  \item \begin{english}\textbf{Robot Swarms}: robotic agents coordinate for logistics tasks.\end{english}
-  \item \begin{english}\textbf{Autonomous Vehicles}: inter-vehicle coordination for collision avoidance and traffic optimisation.\end{english}
-  \item \begin{english}\textbf{Space Exploration}: robotic agents for exploring hazardous environments.\end{english}
-\end{itemize}
-
-\subsection{\begin{english}Enterprise Automation\end{english}}
-
-\begin{english}
-\textcite{ibm2024enterprise} report that MAS-based enterprise automation shows
-the highest adoption index (90\%) among all domains.
-\end{english}
-
-\subsection{\begin{english}Application Domains Table\end{english}}
-
-\begin{table}[ht]
-  \centering
-  \caption{\begin{english}MAS Application Domains --- Adoption and Safety Requirement Indices\end{english}}
-  \label{tab:domains}
-  \begin{english}
-  \begin{tabularx}{\textwidth}{lXcc}
-    \toprule
-    \textbf{Domain} & \textbf{Key Use Cases} & \textbf{Adoption (\%)} & \textbf{Safety Req. (\%)} \\
-    \midrule
-    Healthcare            & Diagnosis, drug discovery, scheduling       & 72 & 88 \\
-    Finance               & Algorithmic trading, fraud detection        & 85 & 75 \\
-    Robotics              & Swarm coordination, logistics               & 68 & 82 \\
-    Autonomous Vehicles   & Traffic optimisation, collision avoidance   & 60 & 95 \\
-    Enterprise Automation & Workflow, RPA, customer service             & 90 & 65 \\
-    Smart Grid / IoT      & Energy balancing, predictive maintenance    & 55 & 70 \\
-    \bottomrule
-  \end{tabularx}
-  \end{english}
-  \vspace{4pt}
-  {\small \begin{english}Source: \autocite{marketusMAS2024,ibm2024enterprise}\end{english}}
-\end{table}
-
-% =============================================================
-%  SECTION 6 -- SAFETY & ALIGNMENT
-% =============================================================
-\section{\begin{english}Safety, Alignment, and Reliability\end{english}}
-
-\subsection{\begin{english}Safety Challenges in MAS\end{english}}
-
-\begin{english}
-When multiple autonomous agents operate together, unique safety challenges arise
-\autocite{dafoe2020open}:
-\end{english}
-
-\subsubsection{\begin{english}Miscoordination\end{english}}
-
-\begin{english}
-Coordination failure between agents can lead to conflicting decisions, such as two
-robots simultaneously attempting to grasp the same object. According to
-\textcite{dafoe2020open}, this is the most common failure mode (28\% of cases).
-\end{english}
-
-\subsubsection{\begin{english}Conflict\end{english}}
-
-\begin{english}
-Agents with opposing goals may enter deadlock or cause damage. Frequency: 22\%.
-\end{english}
-
-\subsubsection{\begin{english}Collusion\end{english}}
-
-\begin{english}
-In competitive environments, agents may develop unintended collusion strategies.
-Frequency: 18\%.
-\end{english}
-
-\subsubsection{\begin{english}Hallucination Propagation\end{english}}
-
-\begin{english}
-When one LLM agent generates incorrect information, it may propagate to other
-agents in the system \autocite{galileo2024hallucination}. Frequency: 20\%.
-\end{english}
-
-\subsubsection{\begin{english}Context Overflow\end{english}}
-
-\begin{english}
-In long conversations, agents may lose critical information. Frequency: 12\%.
-\end{english}
-
-\subsection{\begin{english}Cooperative AI Principles\end{english}}
-
-\begin{english}
-\textcite{dafoe2020open} proposes a framework for Cooperative AI development
-comprising:
-\end{english}
-
-\begin{enumerate}
-  \item \begin{english}\textbf{Understanding}: agents understand the goals and constraints of other agents.\end{english}
-  \item \begin{english}\textbf{Communication}: reliable and transparent communication channels.\end{english}
-  \item \begin{english}\textbf{Commitment}: ability to commit to future actions.\end{english}
-  \item \begin{english}\textbf{Norms}: agreement on shared behavioural rules.\end{english}
-\end{enumerate}
-
-\subsection{\begin{english}Formal Safety Metrics\end{english}}
-
-\begin{english}
-A systemic safety metric can be defined as:
-\end{english}
-
-\begin{english}
-\begin{equation}
-  S_{\text{system}} = 1 - \prod_{i=1}^{n} (1 - S_i)
-  \label{eq:system_safety}
-\end{equation}
-\end{english}
-
-\begin{english}
-where $S_i \in [0,1]$ is the safety metric of agent $i$. For a system with
-$n = 5$ agents each with $S_i = 0.9$:
-\end{english}
-
-\begin{english}
-\begin{align}
-  S_{\text{system}} &= 1 - (1 - 0.9)^{5} \notag \\
-                    &= 1 - (0.1)^{5}       \notag \\
-                    &= 1 - 0.00001         \notag \\
-                    &= 0.99999
-  \label{eq:safety_example}
-\end{align}
-\end{english}
-
-% =============================================================
-%  SECTION 7 -- VISUALIZATION
-% =============================================================
-\section{\begin{english}Visualisation: MAS Metrics and Landscape\end{english}}
-\label{sec:visualization}
-
-\begin{english}
-The dashboard below presents eight visual panels covering the central dimensions
-of this subject. It was created using Matplotlib and NumPy, based on data from
-\autocite{marketusMAS2024,autogen2023,crewai2024,langgraph2024,dafoe2020open,galileo2024hallucination}.
-\end{english}
-
-\begin{figure}[ht]
-  \centering
-  \includegraphics[width=\textwidth,keepaspectratio]{figures/graph.pdf}
-  \caption{%
-    \begin{english}
-    Comprehensive dashboard: Multi-Agent Systems (MAS) \& Autonomous AI ---
-    key metrics and market landscape.
-    The 3$\times$3 dashboard covers:
-    (1)~Global MAS market growth forecast (CAGR 48.6\%, Eq.~\ref{eq:cagr}),
-    (2)~Agent architecture evolution timeline,
-    (3)~MAS architecture radar comparison (Hierarchical vs.\ Peer-to-Peer vs.\ Hybrid),
-    (4)~LLM-powered framework comparison (AutoGen / CrewAI / LangGraph / LlamaIndex),
-    (5)~MARL emergent behaviour learning curves with emergence threshold
-        (Eq.~\ref{eq:emergence_sigmoid}),
-    (6)~Application domain adoption and safety requirement indices,
-    (7)~Agent communication protocol timeline (KQML to ACP), and
-    (8)~MAS safety risk distribution donut chart (five failure-mode categories).
-    \end{english}%
-  }
-  \label{fig:dashboard}
+  \includegraphics[width=0.85\textwidth]{figures/diagram.pdf}
+  \caption{איור סכמטי של ארכיטקטורת סוכן מודרני במערכת רב-סוכנית, המציג את חמשת המרכיבים העיקריים: שכבת תפיסה, מנוע הסקה ותכנון, מודול זיכרון, ממשק שימוש בכלים ומבצע פעולות, ואת הקשרים ביניהם.}
+  \label{fig:diagram}
 \end{figure}
 
-\subsection{\begin{english}Panel Interpretation\end{english}}
+\subsection{טיפולוגיה של ארכיטקטורות MAS}
 
-\begin{description}
-  \item[\begin{english}Panel 1 --- MAS Market Growth\end{english}]
-        \begin{english}Shows the growth forecast from \$15B in 2024 to \$375B in 2034,
-        based on Equation~\ref{eq:cagr}.\end{english}
+ספרות המחקר מזהה מספר דפוסי ארכיטקטורה מרכזיים ב-\LR{MAS} \cite{LinkedIn_Sharda2025}:
 
-  \item[\begin{english}Panel 2 --- Historical Evolution\end{english}]
-        \begin{english}Illustrates the five development stages of agent architectures,
-        from rule-based agents to LLM-powered agents.\end{english}
+\textbf{ארכיטקטורה היררכית (\LR{Hierarchical Architecture}):} זהו המודל הנפוץ ביותר בפריסות תעשייתיות. סוכן מתזמר (\LR{orchestrator}) מנהל ומכוון קבוצה של תת-סוכנים (\LR{sub-agents}). כל תת-סוכן מתמחה בתחום ספציפי ומדווח לסוכן המנהל. יתרון מרכזי של ארכיטקטורה זו הוא בהירות האחריות וקלות הניהול.
 
-  \item[\begin{english}Panel 3 --- Architecture Comparison\end{english}]
-        \begin{english}Radar chart comparing Hierarchical, Peer-to-Peer, and Hybrid
-        architectures across five dimensions.\end{english}
+\textbf{ארכיטקטורה עמית-לעמית (\LR{Peer-to-Peer / Flat Architecture}):} בגישה זו, כל הסוכנים שווים ברמת הסמכות. הם מתקשרים ישירות זה עם זה ללא גורם מרכזי מתאם. גישה זו עמידה יותר בפני כשלים, אך דורשת מנגנוני תיאום מורכבים יותר.
 
-  \item[\begin{english}Panel 4 --- Frameworks\end{english}]
-        \begin{english}Grouped bars comparing AutoGen, CrewAI, LangGraph, and LlamaIndex.\end{english}
+\textbf{ארכיטקטורה מבוססת-שוק (\LR{Market-Based Architecture}):} סוכנים מציעים ומכרזים על משימות, בדומה לאופן שבו שווקים מקצים משאבים. גישה זו יעילה במיוחד כאשר יש צורך בהקצאת משאבים מוגבלים בין סוכנים מתחרים.
 
-  \item[\begin{english}Panel 5 --- MARL\end{english}]
-        \begin{english}Learning curves demonstrating the emergence of cooperation in a
-        training environment, based on Equation~\ref{eq:emergence_sigmoid}.\end{english}
+\vspace{0.5em}
+\begin{tabularx}{\textwidth}{>{\raggedleft\arraybackslash}X
+                               >{\raggedleft\arraybackslash}X
+                               >{\raggedleft\arraybackslash}X
+                               >{\raggedleft\arraybackslash}X}
+\toprule
+\textbf{סוג ארכיטקטורה} & \textbf{יתרונות} & \textbf{חסרונות} & \textbf{שימוש אופייני} \\
+\midrule
+היררכית      & בהירות, ניהול קל         & נקודת כשל יחידה      & אוטומציה עסקית   \\
+עמית-לעמית   & עמידות, גמישות           & תיאום מורכב          & רשתות חיישנים   \\
+מבוססת-שוק  & יעילות הקצאה             & תנודתיות, עלות       & ניהול משאבים    \\
+היברידית     & גמישות מרבית             & מורכבות גבוהה        & מערכות מורכבות  \\
+\bottomrule
+\end{tabularx}
+\vspace{0.5em}
 
-  \item[\begin{english}Panel 6 --- Domains\end{english}]
-        \begin{english}Horizontal bars of adoption and safety requirement indices by sector.\end{english}
+\subsection{הבחנה בין MAS לסוכן יחיד}
 
-  \item[\begin{english}Panel 7 --- Protocols\end{english}]
-        \begin{english}Timeline of communication protocols from KQML to ACP.\end{english}
+ההבחנה בין מערכת \LR{MAS} לסוכן יחיד חזק אינה רק כמותית אלא איכותית. מחקר מ-2025 \cite{arXiv2506} מבסס מסגרת הבחנה שיטתית בין סוכנים אוטונומיים לבין ארכיטקטורות \LR{MAS} שיתופיות, על בסיס שלושה ממדים: עקרונות פעולה (\LR{operational principles}), סמכות החלטה (\LR{decision authority}), ותופולוגיית אינטראקציה (\LR{interaction topology}).
 
-  \item[\begin{english}Panel 8 --- Safety Risks\end{english}]
-        \begin{english}Donut chart of five MAS failure-mode categories.\end{english}
-\end{description}
+בסוכן יחיד, סמכות ההחלטה מרוכזת, תופולוגיית האינטראקציה פשוטה, ועקרונות הפעולה מוגדרים בצורה מרכזית. ב-\LR{MAS}, לעומת זאת, כל אחד מהממדים הללו מתפצל ומתבזר, מה שיוצר מרחב בעיה שונה לחלוטין. בפרט, שאלת "מי אחראי?" כאשר מערכת \LR{MAS} מקבלת החלטה שגויה היא שאלה מורכבת הרבה יותר מאשר בסוכן יחיד.
 
-% =============================================================
-%  SECTION 8 -- FUTURE DIRECTIONS
-% =============================================================
-\section{\begin{english}Future Directions and Open Challenges\end{english}}
+\subsection{גידול השוק ומגמות עתידיות}
 
-\subsection{\begin{english}Technical Challenges\end{english}}
+הנתונים הכלכליים מדברים בעד עצמם. שוק ה-\LR{MAS} העולמי הגיע ל-3.01 מיליארד דולר בשנת 2024, עם \LR{$\text{CAGR}$} של 45.1\% \cite{MarketUS2024}. הנתונים הללו משקפים לא רק עניין אקדמי, אלא ביקוש תעשייתי ממשי. הגורמים המניעים את הצמיחה כוללים: בשלות ה-\LR{LLMs}, זמינות תשתיות ענן, עלייה בדרישה לאוטומציה, ומחסור בכוח אדם אנושי בתחומים מסוימים.
 
-\begin{enumerate}
-  \item \begin{english}\textbf{Scalability}: how to efficiently manage systems with thousands of agents?\end{english}
-  \item \begin{english}\textbf{Fault Tolerance}: ensuring correct operation when some agents fail.\end{english}
-  \item \begin{english}\textbf{Privacy}: preserving data privacy in distributed environments.\end{english}
-  \item \begin{english}\textbf{Explainability}: understanding the decision-making processes of complex systems.\end{english}
-\end{enumerate}
+נוסחת חישוב \LR{CAGR} מוגדרת כדלקמן:
 
-\subsection{\begin{english}Alignment and Governance Challenges\end{english}}
+\begin{equation}
+  \text{CAGR} = \left(\frac{V_{\text{final}}}{V_{\text{initial}}}\right)^{1/t} - 1
+  \label{eq:cagr}
+\end{equation}
 
-\begin{enumerate}
-  \item \begin{english}\textbf{Value Alignment}: ensuring agent goals are consistent with human values \autocite{dafoe2020open}.\end{english}
-  \item \begin{english}\textbf{Accountability}: who is responsible for the actions of an autonomous system?\end{english}
-  \item \begin{english}\textbf{Regulation}: developing regulatory frameworks for MAS oversight.\end{english}
-\end{enumerate}
+כאשר \LR{$V_{\text{final}}$} הוא הערך הסופי, \LR{$V_{\text{initial}}$} הוא הערך ההתחלתי, ו-\LR{$t$} הוא מספר השנים. עבור שוק \LR{MAS}, ניתן לכתוב:
 
-\subsection{\begin{english}Emerging Research Trends\end{english}}
+\begin{equation}
+  \text{CAGR} = \left(\frac{V_{2029}}{3.01\,\text{B}}\right)^{1/5} - 1 = 0.451
+  \label{eq:cagr_mas}
+\end{equation}
 
-\begin{itemize}
-  \item \begin{english}\textbf{Long-Term Memory Agents}: integration of vector databases for context retention.\end{english}
-  \item \begin{english}\textbf{Hierarchical Planning}: agents planning at different levels of abstraction.\end{english}
-  \item \begin{english}\textbf{Transfer Learning}: reusing knowledge acquired in one environment in another.\end{english}
-  \item \begin{english}\textbf{Meta-Learning}: agents learning how to learn faster.\end{english}
-\end{itemize}
+מגמות עתידיות מרכזיות כוללות שילוב עמוק יותר של \LR{MAS} עם מחשוב קוונטי, שימוש במערכות \LR{MAS} לניהול תשתיות קריטיות, ופיתוח תקנות רגולטוריות ספציפיות ל-\LR{MAS} ברמה הלאומית והבינלאומית.
 
-% =============================================================
-%  SECTION 9 -- CONCLUSION
-% =============================================================
-\section{\begin{english}Conclusion\end{english}}
-
-\begin{english}
-Multi-agent systems are undergoing a profound revolution with the rise of LLMs and
-the development of sophisticated frameworks. This article has surveyed the broad
-landscape:
-\end{english}
-
-\begin{itemize}
-  \item \begin{english}\textbf{Architectures}: from simple agents to complex hybrid systems.\end{english}
-  \item \begin{english}\textbf{Protocols}: from KQML and FIPA to MCP, A2A, and ACP.\end{english}
-  \item \begin{english}\textbf{Learning}: MARL and emergent behaviour as the basis for collective intelligence.\end{english}
-  \item \begin{english}\textbf{Frameworks}: AutoGen, CrewAI, LangGraph, and LlamaIndex.\end{english}
-  \item \begin{english}\textbf{Applications}: from healthcare and finance to robotics and enterprise automation.\end{english}
-  \item \begin{english}\textbf{Safety}: five failure-mode categories and Cooperative AI principles.\end{english}
-\end{itemize}
-
-\begin{english}
-The MAS market is expected to grow 25-fold in the next decade. The success of this
-revolution depends not only on technological development, but also on our ability
-to build systems that are safe, reliable, and aligned with human values.
-As \textcite{dafoe2020open} notes, cooperative artificial intelligence is not merely
-a technical challenge but a profound societal one.
-\end{english}
-
-\begin{english}
-The future of autonomous AI lies not in isolated intelligence, but in the emergent
-wisdom of coordinated agent collectives --- systems that are greater than the sum of
-their parts, yet remain aligned with human values and subject to meaningful oversight.
-\end{english}
-
-% =============================================================
-%  BIBLIOGRAPHY
-% =============================================================
 \newpage
-\printbibliography[title={\begin{english}Bibliography\end{english}}]
+
+%% ============================================================
+%% CHAPTER 2
+%% ============================================================
+\section{פרק 2: תיאום, תקשורת ושיתוף פעולה ב-MAS}
+
+\subsection{אתגר התיאום}
+
+תיאום רב-סוכני (\LR{multi-agent coordination}) הוא ניהול שיטתי של סוכנים אוטונומיים מרובים הפועלים יחד לקראת מטרות משותפות. זה כולל הקצאת משימות, פתרון קונפליקטים וסנכרון מצב \cite{Galileo2025}. אתגר התיאום הוא אחת הבעיות הקשות ביותר ב-\LR{MAS}, ולא בכדי: בעוד שבמערכת מרכזית ישנו גורם יחיד שיודע את כל המצב ומקבל את כל ההחלטות, ב-\LR{MAS} כל סוכן רואה רק חלק מהתמונה, ויחד עם זאת עליהם להגיע לתוצאות עקביות.
+
+הבעיה מסתבכת עוד יותר כאשר מביאים בחשבון שסוכנים עשויים להיות בעלי מטרות מקומיות שאינן מתיישבות בהכרח עם המטרה הגלובלית של המערכת. תופעה זו, המכונה "\LR{alignment problem}" ברמת המערכת, נדונה בהרחבה בפרק 6.
+
+\subsection{פרוטוקולי תקשורת}
+
+תקשורת בין סוכנים היא הדם של כל מערכת \LR{MAS}. הספרות מזהה מספר שכבות תקשורת \cite{LinkedIn_Sharda2025}:
+
+\textbf{שפות תקשורת מובנות:} \LR{FIPA-ACL} (\LR{Foundation for Intelligent Physical Agents --- Agent Communication Language}) ו-\LR{KQML} (\LR{Knowledge Query and Manipulation Language}) הן שפות תקשורת סטנדרטיות שפותחו במיוחד ל-\LR{MAS}. הן מאפשרות לסוכנים להביע לא רק מידע, אלא גם כוונות, בקשות ומצבים רגשיים-מטרתיים.
+
+\textbf{\LR{APIs} ו-\LR{JSON-RPC}:} עבור סוכנים קלים יותר, תקשורת דרך \LR{RESTful APIs} ו-\LR{JSON-RPC} מספקת פשטות וגמישות. גישה זו נפוצה במיוחד בסביבות ענן.
+
+\textbf{שפה טבעית:} כאשר \LR{LLMs} משמשים כליבה הקוגניטיבית של הסוכנים, תקשורת בשפה טבעית הופכת לאפשרית ואף מועדפת. זה מאפשר גמישות עצומה אך מציב אתגרים חדשים של עמימות ופרשנות.
+
+\subsection{מצבי אינטראקציה}
+
+מחקר \LR{ACM} מ-2025 \cite{ACM2025} מזהה מספר מצבי אינטראקציה מרכזיים ב-\LR{MAS}:
+
+\textbf{פירוק משימות שיתופי (\LR{Cooperative Task Decomposition}):} סוכנים מחלקים ביניהם משימה גדולה לתתי-משימות, כל אחד מטפל בחלקו, ולאחר מכן מאחדים את התוצאות. זהו מצב האינטראקציה הנפוץ ביותר ביישומים עסקיים.
+
+\textbf{משא ומתן יריבותי (\LR{Adversarial Negotiation}):} סוכנים עם אינטרסים מנוגדים מנהלים משא ומתן כדי להגיע לפשרה. גישה זו נפוצה בשוקי אנרגיה חכמים ובמערכות ניהול משאבים.
+
+\textbf{האצלה היררכית (\LR{Hierarchical Delegation}):} סוכן עליון מאציל משימות לסוכנים כפופים, עם מנגנוני פיקוח ודיווח. זהו הדפוס הנפוץ ביותר בארכיטקטורות \LR{AutoGen} ו-\LR{CrewAI}.
+
+\subsection{אתגרים בתיאום בעולם האמיתי}
+
+מחקר מ-\LR{ScienceDirect} \cite{ScienceDirect_AgentAI2025} מצביע על פער משמעותי בין ההנחות התיאורטיות של מסגרות \LR{MAS} רבות לבין המציאות בשטח. בפרט, רשתות אנרגיה ותשתיות אחרות מציגות אתגרים שמסגרות \LR{MAS} המבוססות על הנחות אידיאליות אינן מסוגלות להתמודד איתם:
+
+\textbf{זמן אחור (\LR{Latency}):} בסביבות בזמן-אמת, זמן האחור בתקשורת בין סוכנים עשוי להוביל להחלטות המבוססות על מידע מיושן.
+
+\textbf{תצפית חלקית (\LR{Partial Observability}):} כל סוכן רואה רק חלק מהמצב הגלובלי, מה שיוצר אי-ודאות מובנית.
+
+\textbf{אינטרסים מנוגדים (\LR{Conflicting Incentives}):} בסביבות עם מספר בעלי עניין, אינטרסים מנוגדים עשויים לגרום לסוכנים לפעול באופן שמיטיב לעצמם על חשבון המערכת הכוללת.
+
+\begin{figure}[h]
+  \centering
+  \includegraphics[width=\textwidth]{figures/graph.pdf}
+  \caption{גרף המציג את הקשר בין מספר הסוכנים במערכת לבין עלות התיאום (\LR{communication overhead}). ציר \LR{X}: מספר סוכנים (1--100); ציר \LR{Y}: עלות תיאום יחסית. הגרף מראה עלייה ריבועית בעלות התיאום עם גידול מספר הסוכנים, עם נקודת שבירה בסביבות 20--30 סוכנים שמעליה עלות התיאום עולה על תועלת הספציאליזציה.}
+  \label{fig:graph}
+\end{figure}
+
+\subsection{תיאום ב-6G וסביבות עתידיות}
+
+מחקר חדשני בתחום תקשורת \LR{6G} \cite{Medium_Masood2024} בוחן שילוב של מסגרות תקשורת \LR{AI-to-AI} לניהול רשתות אוטונומי. בסביבת \LR{6G}, שבה מיליוני מכשירים מחוברים בו-זמנית, תיאום \LR{MAS} הופך לאתגר מרכזי. מחקרים אלו מציעים שימוש בפרוטוקולי תקשורת היררכיים, שבהם סוכנים מקומיים מנהלים תת-רשתות ומדווחים לסוכנים אזוריים, שבתורם מתואמים ברמה הגלובלית.
+
+\subsection{תופעת ה"Digital Stampede"}
+
+אחת התגליות המדאיגות ביותר בתחום \LR{MAS} מגיעה ממחקר \LR{MIT Media Lab} \cite{MIT_Media2025}. כאשר מיליוני סוכני \LR{AI} פועלים בו-זמנית ומגיעים לאותה "אסטרטגיה אופטימלית", נוצרת תופעה המכונה "\LR{digital stampede}" --- התנהגות מסונכרנת המייצרת סיכונים מערכתיים בלתי צפויים. תופעה זו אנלוגית ל-"\LR{Flash Crash}" בשוקי ההון, שבו אלגוריתמי מסחר אוטומטיים גרמו לנפילה חדה ופתאומית במחירי המניות.
+
+מחקר \LR{MIT} מציע מסגרת של "רמות תיאום אגנטי" (\LR{Levels of Agentic Coordination}), החל מכלים פשוטים ועד ל"המונים" של סוכנים אוטונומיים. כל רמה מציגה פרופיל סיכון שונה, ומחייבת מנגנוני פיקוח מותאמים.
+
+\newpage
+
+%% ============================================================
+%% CHAPTER 3
+%% ============================================================
+\section{פרק 3: למידת חיזוק רב-סוכנית והתנהגויות מתעוררות}
+
+\subsection{הגדרה ורקע של MARL}
+
+למידת חיזוק רב-סוכנית (\LR{Multi-Agent Reinforcement Learning --- MARL}) היא תחום הממוקד בצומת של למידת חיזוק (\LR{Reinforcement Learning --- RL}), תורת המשחקים ולמידה עמוקה (\LR{Deep Learning}), שבו סוכנים לומדים מדיניות אופטימלית דרך אינטראקציה עם הסביבה ועם עמיתיהם \cite{Medium_Felix2024}. \LR{MARL} מרחיב את עקרונות ה-\LR{RL} הקלאסי --- שבו סוכן יחיד לומד למקסם תגמול מצטבר --- לסביבה שבה מספר סוכנים פועלים בו-זמנית, כל אחד עם מטרותיו שלו.
+
+האתגר הבסיסי של \LR{MARL} הוא שהסביבה עצמה הופכת לדינמית ובלתי-יציבה מנקודת המבט של כל סוכן, שכן פעולות הסוכנים האחרים משנות את מצב הסביבה. זה הופך את הבעיה למורכבת הרבה יותר מ-\LR{RL} רגיל, ומחייב שימוש בכלים מתורת המשחקים כגון שיווי משקל נאש (\LR{Nash Equilibrium}) לניתוח תוצאות.
+
+\subsection{התנהגויות מתעוררות — מהן ומדוע הן חשובות?}
+
+התנהגות מתעוררת (\LR{emergent behavior}) ב-\LR{MAS} מתייחסת לדפוסים מורכבים הנובעים מאינטראקציות של סוכנים בודדים הפועלים לפי כללים פשוטים --- דפוסים שאינם מתוכנתים במפורש ואינם ניתנים לחיזוי מהתנהגות הסוכן הבודד בלבד \cite{Milvus2025}. תופעה זו היא אחת המרתקות והמדאיגות ביותר ב-\LR{MAS}.
+
+דוגמה קלאסית מהביולוגיה: נמלה בודדת פועלת לפי כללים פשוטים, אך מושבת נמלים כולה מסוגלת לבנות גשרים, לנהל מלחמות ולאחסן מזון בצורה מורכבת להפליא. אף אחד לא "תכנת" את המושבה לבצע פעולות אלו --- הן מתעוררות מאינטראקציות מקומיות פשוטות.
+
+\subsection{ממצאים מחקריים מרכזיים}
+
+\textbf{למידה חברתית מתעוררת (\LR{Emergent Social Learning}):} מחקר \LR{Google Research} \cite{GoogleResearch_SocialLearning2021} הדגים כי סוכני \LR{RL} עצמאיים בסביבות רב-סוכניות יכולים ללמוד "למידה חברתית" --- רכישת התנהגויות מתוחכמות על ידי תצפית בסוכנים מומחים --- ללא תכנות מפורש של יכולת זו. ממצא זה מדגים כיצד יכולות מורכבות יכולות להתעורר מתהליכי אופטימיזציה פשוטים.
+
+\textbf{כלכלה מתעוררת (\LR{Emergent Economics}):} מחקר \LR{DeepMind} \cite{DeepMind_Bartering} הראה שאוכלוסיות של סוכני \LR{deep RL} יכולות ללמוד התנהגויות מיקרו-כלכליות, כולל חליפין (\LR{bartering}) מתעורר, דרך אינטראקציה מונחית-תגמול בלבד. סוכנים שלא הוכשרו בכלכלה "המציאו" מחדש את עקרון החליפין --- אחד מהמנגנונים הכלכליים הקדומים ביותר של האנושות.
+
+\textbf{דינמיקות מרדף-בריחה (\LR{Pursuit-Evasion Dynamics}):} מחקר \LR{Nature} מ-2025 \cite{Nature2025} חקר התנהגויות מתעוררות במשחקי מרדף-בריחה רב-סוכניים בסביבות \LR{2D} מוגבלות. הממצאים גילו כיצד דינמיקות יריבותיות מייצרות דפוסים טקטיים מתוחכמים --- כגון תנועות מתואמות, מארבים ואסטרטגיות הסחת דעת --- שלא תוכנתו במפורש.
+
+\textbf{עיצוב תגמול ושליטה בהתנהגות מתעוררת:} מחקר מ-\LR{Seattle Pacific University} \cite{SPU2024} הדגים כי ערכי תגמול שונים ב-\LR{RL} משפיעים ישירות על הופעת התנהגויות תחרותיות לעומת שיתופיות. ממצא זה חשוב מנקודת מבט הנדסית: הוא מציע מנגנון לכוון תוצאות מתעוררות על ידי עיצוב פונקציות התגמול בצורה מחושבת.
+
+\subsection{אינטליגנציית נחיל (Swarm Intelligence)}
+
+אחד היישומים המרתקים ביותר של \LR{MARL} הוא חקר וכימות של התנהגויות נחיל (\LR{swarm behaviors}) בתנאים מבוקרים \cite{Phan_Emergence}. בניגוד לגישות מסורתיות שניסו לתכנת התנהגות נחיל ישירות, גישת \LR{MARL} מאפשרת לסוכנים "לגלות" אסטרטגיות נחיל אופטימליות בעצמם. זה מאפשר לא רק חקר ביולוגי מרתק, אלא גם פיתוח מערכות רובוטיקת נחיל (\LR{swarm robotics}) יעילות יותר.
+
+\subsection{יישומים של MARL}
+
+\LR{MARL} מוצא יישומים במגוון תחומים \cite{ScienceDirect_MARL2024}:
+
+\begin{itemize}
+  \item \textbf{חקלאות מדויקת (\LR{Precision Agriculture}):} סוכני \LR{MARL} מנהלים צי של רחפנים ורובוטים חקלאיים, מתאמים בין ניטור, ריסוס ואיסוף יבול.
+  \item \textbf{חקר תת-ימי (\LR{Underwater Exploration}):} רשתות של כלי שיט אוטונומיים תת-ימיים מתאמות מסעות חקר בסביבות שבהן תקשורת אנושית מוגבלת.
+  \item \textbf{רכבים אוטונומיים (\LR{Autonomous Vehicles}):} \LR{MARL} מאפשר לרכבים אוטונומיים לנהל משא ומתן על צמתים, ליצור שיירות ולהגיב לחירום בצורה שיתופית.
+  \item \textbf{ניהול תנועה (\LR{Traffic Management}):} רמזורים חכמים הפועלים כסוכני \LR{MARL} יכולים לאופטם זרימת תנועה ברמה העירונית.
+  \item \textbf{מודלים של שוקי הון (\LR{Financial Market Modeling}):} \LR{MARL} משמש למידול של שוקי הון, שבהם כל סוכן מייצג משתתף שוק עם אסטרטגיית מסחר משלו.
+\end{itemize}
+
+\newpage
+
+%% ============================================================
+%% CHAPTER 4
+%% ============================================================
+\section{פרק 4: מסגרות MAS מבוססות LLM — AutoGen, CrewAI ו-LangGraph}
+
+\subsection{המהפכה של LLM-MAS}
+
+הופעתן של מסגרות \LR{MAS} מבוססות מודלי שפה גדולים (\LR{LLM-based Multi-Agent Systems --- LLM-MAS}) מייצגת שינוי פרדיגמה יסודי. לפני עידן ה-\LR{LLMs}, בניית סוכן בעל יכולות הסקה מתוחכמת דרשה הנדסה מורכבת ביותר. כיום, \LR{LLM} משמש כ"ליבה קוגניטיבית" (\LR{cognitive core}) של הסוכן, מה שמאפשר הסקה שפתית, תכנון רב-שלבי ותקשורת בשפה טבעית מיידית \cite{Lyu2024}.
+
+מחקר פורץ-דרך של \LR{Wang et al.} (2024) \cite{Meta_Intelligence2024} הגדיר סוכני \LR{LLM} כמערכות אוטונומיות עם \LR{LLM} כליבה קוגניטיבית, הכוללות ארבעה מרכיבים עיקריים: פרופיל (\LR{profile}), זיכרון (\LR{memory}), תכנון (\LR{planning}) ופעולה (\LR{action}). מסגרת זו הפכה לבסיס תיאורטי לרוב המחקרים בתחום.
+
+\subsection{AutoGen — מצוינות בייצור קוד אוטונומי}
+
+\LR{AutoGen}, מסגרת \LR{MAS} של \LR{Microsoft}, התמחתה בייצור קוד אוטונומי. הסוכנים ב-\LR{AutoGen} מסוגלים לכתוב קוד, לבצע אותו, לזהות שגיאות, לכתוב קוד מתוקן ולחזור על התהליך --- כל זאת דרך שיחה רב-סוכנית \cite{Reddit_LangChain2024}. הארכיטקטורה של \LR{AutoGen} מבוססת על "שיחות" (\LR{conversations}) בין סוכנים, שבהן כל סוכן ממלא תפקיד מוגדר (כגון "מתכנת", "בודק", "מנהל פרויקט").
+
+יתרון מרכזי של \LR{AutoGen} הוא יכולת ה-"\LR{self-correction}" --- הסוכן מזהה שגיאות בקוד שלו ומתקן אותן ללא התערבות אנושית. זה מאפשר פיתוח תוכנה אוטונומי ברמה שלא הייתה אפשרית בעבר.
+
+\subsection{CrewAI — ספציאליזציה ותפקידים}
+
+\LR{CrewAI} מציגה גישה שונה: במקום להתמקד בקוד, היא מייעלת האצלת משימות מבוססת-תפקידים. ב-\LR{CrewAI}, סוכנים מוגדרים עם תפקידים ספציפיים (כגון "חוקר", "כותב", "אנליסט") ועובדים יחד ב"צוותים" (\LR{crews}) לקראת מטרה מוגדרת \cite{arXiv2411}. גישה זו אינטואיטיבית ומתאימה לתהליכי עבודה (\LR{workflows}) עסקיים שבהם תפקידים ואחריות מוגדרים בצורה ברורה.
+
+מחקר \LR{arXiv} מ-2024 \cite{arXiv2411} בחן את יישום \LR{LLM multi-agent applications} על בסיס \LR{LangGraph} ו-\LR{CrewAI}, ומצא כי \LR{CrewAI} מצטיינת במשימות הדורשות ספציאליזציה ברורה, בעוד ש-\LR{LangGraph} מתאימה יותר לזרימות עבודה מורכבות עם לולאות ומצבים.
+
+\subsection{LangGraph — שליטה בזרימות עבודה מורכבות}
+
+\LR{LangGraph} מציעה את הרמה הגבוהה ביותר של שליטה בין שלוש המסגרות. היא משתמשת בגרפים מכוונים אציקליים (\LR{Directed Acyclic Graphs --- DAGs}) לניהול מעברי מצב של סוכנים, מה שהופך אותה למועדפת לפריסות \LR{production-grade} \cite{ScaleXI2024}. \LR{LangGraph} מאפשרת הגדרה מדויקת של: מתי כל סוכן פועל, אילו מידע הוא מקבל, ומה קורה בתרחישי שגיאה.
+
+\vspace{0.5em}
+\begin{tabularx}{\textwidth}{>{\raggedleft\arraybackslash}X
+                               >{\raggedleft\arraybackslash}X
+                               >{\raggedleft\arraybackslash}X
+                               >{\raggedleft\arraybackslash}X}
+\toprule
+\textbf{מסגרת} & \textbf{חוזק עיקרי} & \textbf{חולשה עיקרית} & \textbf{שימוש אופטימלי} \\
+\midrule
+\LR{AutoGen}   & ייצור קוד אוטונומי, \LR{self-correction} & פחות מתאים לתהליכים ברורים & פיתוח תוכנה, מחקר \\
+\LR{CrewAI}    & תפקידים ברורים, קל לשימוש & פחות גמיש לזרימות מורכבות & אוטומציה עסקית \\
+\LR{LangGraph} & שליטה מלאה, \LR{production-grade} & עקומת למידה תלולה & מערכות קריטיות \\
+\bottomrule
+\end{tabularx}
+\vspace{0.5em}
+
+\subsection{ממצאי מחקר מרכזיים}
+
+סקירת \LR{arXiv} מ-2024 \cite{arXiv2402} מציגה ניתוח מעמיק של יכולות ואתגרים של \LR{LLM-MAS}. הממצאים המרכזיים כוללים:
+
+\textbf{יכולות פתרון בעיות:} \LR{LLM-MAS} מצטיינת בבעיות הדורשות פירוק משימות, חשיבה רב-שלבית ואינטגרציה של ידע ממקורות מגוונים. בפרט, מערכות מרובות-סוכנים מציגות ביצועים עדיפים על פני סוכן יחיד בבעיות מורכבות.
+
+\textbf{סימולציה חברתית:} \LR{LLM-MAS} מאפשרת סימולציה של דינמיקות חברתיות מורכבות, כולל שווקים, אוכלוסיות ומערכות פוליטיות.
+
+\textbf{אתגרים פתוחים:} הסקירה מזהה מספר אתגרים פתוחים מרכזיים, כולל הגבלות חלון הקשר (\LR{context window limitations}), התפשטות הזיות (\LR{hallucination propagation}) בין סוכנים, ואמון בין-סוכני (\LR{inter-agent trust}).
+
+מחקר \LR{Springer} מ-2024 \cite{Springer2024} מרחיב על אתגרים אלו, ומוסיף את שאלת הסקלביליות: כיצד ניתן לנהל מערכת \LR{LLM-MAS} עם עשרות או מאות סוכנים מבלי שעלות החישוב תהפוך לבלתי-סבירה?
+
+\subsection{מגמות מחקר}
+
+מחקר \LR{ACM} מ-2025 \cite{ACM2025} מזהה מגמת מחקר ברורה כלפי מעלה בתחום \LR{LLM-MAS}, עם גיוון הולך וגדל במצבי אינטראקציה ושיתוף פעולה בין סוכנים. בפרט, מחקרים עדכניים חוקרים: למידה מטא (\LR{meta-learning}) בין סוכנים, שיתוף ידע אפקטיבי, ומנגנוני אמון ואימות בין סוכנים.
+
+\newpage
+
+%% ============================================================
+%% CHAPTER 5
+%% ============================================================
+\section{פרק 5: יישומים בעולם האמיתי של מערכות רב-סוכניות}
+
+\subsection{MAS בבריאות — אפשרויות ואתגרים}
+
+תחום הבריאות הוא אחד מהתחומים המבטיחים ביותר לפריסת \LR{MAS}. מערכות \LR{MAS} בבריאות מאפשרות שיתוף פעולה בין סוכן אבחון, סוכן תכנון טיפול וסוכן ניטור חולה, כדי לשפר תוצאות, להפחית אשפוזים חוזרים ולשפר דיוק אבחוני עם תובנות בזמן-אמת \cite{Pariveda2025}.
+
+דוגמאות ספציפיות כוללות: מערכות \LR{MAS} לניתוח תמונות רפואיות, שבהן סוכנים מתמחים בסוגי בדיקות שונים (\LR{CT}, \LR{MRI}, \LR{X-ray}) ומשתפים פעולה לאבחון מקיף; מערכות לניהול תרופות, שבהן סוכן ניטור עוקב אחר נטילת תרופות ומדווח לסוכן רופא; ומערכות לתכנון טיפול אונקולוגי, שבהן סוכנים מרובים מנתחים נתוני גנומיקה, היסטוריה רפואית וספרות מדעית עדכנית.
+
+עם זאת, מחקר \LR{Frontiers in Public Health} מ-2026 \cite{Frontiers2026} מזהיר כי \LR{MAS} בבריאות מציגה אתגרים אתיים חדשים וחמורים. שאלות כגון: מי אחראי כאשר מערכת \LR{MAS} מאבחנת אבחנה שגויה? כיצד מובטחת פרטיות הנתונים כאשר מידע רפואי עובר בין סוכנים מרובים? האם ניתן לסמוך על החלטות קליניות של מערכת אוטונומית? --- כל אלו דורשות מענה לפני פריסה רחבה.
+
+\subsection{רובוטיקה ורחפנים}
+
+רובוטים ורחפנים הפועלים כמערכות \LR{MAS} מבצעים משימות כגון חיפוש והצלה, ניטור חקלאי, סקר סביבתי ולוגיסטיקת מחסנים \cite{EnkryptAI2025}. מחקר \LR{arXiv} מ-2025 \cite{arXiv2505} על "\LR{Multi-agent Embodied AI}" סוקר את המחקר הנוכחי על סוכנים פיזיים (רובוטים) הפועלים בסביבות משותפות, ומזהה אתגרים מרכזיים בתפיסה, תקשורת ותכנון פעולה משותף.
+
+אחד האתגרים הייחודיים של \LR{MAS} מגולם (\LR{embodied MAS}) הוא הצורך לתאם לא רק מידע אלא גם פעולות פיזיות בחלל. שני רובוטים שמנסים לאחוז באותו חפץ בו-זמנית עלולים לגרום נזק הדדי. מנגנוני תיאום בחלל הפיזי מורכבים הרבה יותר מתיאום מידע בלבד.
+
+\subsection{רכבים אוטונומיים}
+
+\LR{MARL} מיושם ישירות לתיאום רב-רכבי, המאפשר לרכבים אוטונומיים לנהל משא ומתן על צמתים, ליצור שיירות ולהגיב לחירום בצורה שיתופית \cite{ScienceDirect_MARL2024}. תחום זה מציג דוגמה מובהקת לאתגרי \LR{MAS} בזמן-אמת: החלטות חייבות להתקבל בשברי שניות, עלות כשל היא חיי אדם, וסביבת הפעולה (כבישים ציבוריים) היא בלתי-צפויה מטבעה.
+
+מחקרים עדכניים בתחום בוחנים שאלות כגון: כיצד רכב אוטונומי מחליט לוותר על עדיפות דרך לטובת רכב אחר? כיצד שיירה של רכבים מגיבה לחסימה פתאומית? כיצד מוגדרות אחריות ואחריותיות כאשר שני רכבים אוטונומיים מעורבים בתאונה?
+
+\subsection{אוטומציה עסקית}
+
+\LR{MAS} משנה פעולות עסקיות על ידי אוטומציה של תהליכי עבודה מורכבים רב-שלביים, כאשר פלטפורמות כמו \LR{AutoGen} ו-\LR{CrewAI} מאפשרות לארגונים לפרוס "צוותי" סוכנים למחקר, תכנות, שירות לקוחות וניתוח נתונים \cite{Cognizant2025}.
+
+דוגמאות ספציפיות כוללות: ייצור תוכן שיווקי, שבו סוכן מחקר אוסף מידע, סוכן כותב מייצר תוכן, סוכן עורך מבצע עריכה לשונית וסוכן \LR{SEO} מייעל לחיפוש; ניתוח פיננסי, שבו סוכנים מרובים מנתחים נתוני שוק, דוחות כספיים ומגמות מאקרו-כלכליות; ותמיכת לקוחות, שבה סוכנים מתמחים בנושאים שונים מעבירים שיחות ביניהם בצורה חלקה.
+
+\subsection{רשתות אנרגיה חכמות}
+
+\LR{MAS} מיושמת לניהול רשת חשמל חכמה (\LR{smart grid}), שבה סוכנים המייצגים צרכנים-יצרנים (\LR{prosumers}), מפעילי רשת ויחידות אחסון מנהלים משא ומתן על חלוקת אנרגיה בזמן-אמת \cite{ScienceDirect_AgentAI2025}. יישום זה ממחיש את הפוטנציאל של \LR{MAS} לפתרון בעיות תשתית קריטיות, אך גם את האתגרים: כשל במערכת \LR{MAS} של רשת חשמל עשוי להוביל להפסקות חשמל נרחבות.
+
+\subsection{ניתוח רוחבי של דפוסי פריסה}
+
+מחקר \LR{ResearchGate} מ-2024 \cite{ResearchGate2024} מציג ניתוח רוחבי של דפוסי פריסת \LR{MAS} בתחומים שונים. הממצאים מגלים מספר דפוסים משותפים: ראשית, פריסות מוצלחות כוללות תמיד מנגנון "\LR{human-in-the-loop}" ברמה כלשהי; שנית, ארכיטקטורה היררכית נפוצה יותר בפריסות \LR{production} מאשר בניסויי מחקר; ושלישית, האתגר הגדול ביותר בפריסה אינו טכני אלא ארגוני --- שינוי תהליכי עבודה אנושיים להתאמה לסוכנים אוטונומיים.
+
+\newpage
+
+%% ============================================================
+%% CHAPTER 6
+%% ============================================================
+\section{פרק 6: אתיקה, בטיחות וממשל של MAS אוטונומי}
+
+\subsection{הנוף האתי המורחב}
+
+בינה מלאכותית אגנטית מציגה מגוון מורחב של דילמות אתיות בהשוואה למודלי \LR{AI} מסורתיים, כולל שאלות של קבלת החלטות אוטונומית ללא פיקוח אנושי, אי-התאמת מטרות מתעוררת, וכשלים מדורגים ברשתות סוכנים \cite{IBM_Ethics2024}. ההבדל המהותי בין אתיקת \LR{AI} מסורתית לאתיקת \LR{MAS} הוא בכך שב-\LR{MAS}, ה"שחקן" האתי אינו ישות יחידה אלא מערכת מבוזרת --- מה שמסבך מאוד שאלות של אחריות ואחריותיות.
+
+\subsection{הטיעון נגד אוטונומיה מלאה}
+
+מאמר \LR{arXiv} מ-2025 \cite{arXiv2502} בשם "\LR{Fully Autonomous AI Agents Should Not be Developed}" מציג טיעון מפורט נגד פיתוח סוכני \LR{AI} בעלי אוטונומיה מלאה. הטיעון מבוסס על שלושה עמודי יסוד: בלתי-צפויות (\LR{unpredictability}) של התנהגות סוכנים בסביבות מורכבות; גישה דיגיטלית (\LR{digital access}) שמאפשרת לסוכן אוטונומי לגרום נזק בקנה מידה גדול; ופוטנציאל לשימוש זדוני (\LR{malicious use}). המאמר קורא לאוטונומיה מוגבלת (\LR{bounded autonomy}) ולמגבלות "\LR{human-in-the-loop}".
+
+\subsection{קטגוריות סיכון מרכזיות}
+
+דוח הקרן ל-\LR{AI} שיתופי (\LR{Cooperative AI Foundation}) מ-2024 \cite{CoopAI2024} מזהה סיכונים חדשים וייחודיים למצבים רב-סוכניים:
+
+\textbf{קנוניה מתעוררת (\LR{Emergent Collusion}):} סוכנים עשויים לפתח אסטרטגיות קנוניה שלא תוכנתו ולא נצפו בשלב הפיתוח.
+
+\textbf{תיאור מרמה (\LR{Deceptive Coordination}):} סוכנים עשויים לפתח מנגנוני תקשורת "סמויים" שאינם מובנים למפקחים אנושיים.
+
+\textbf{שבריריות מערכתית (\LR{Systemic Fragility}):} תלות הדדית בין סוכנים עשויה ליצור נקודות כשל מדורגות שבהן כשל של סוכן אחד מוביל לקריסת המערכת כולה.
+
+קטגוריות סיכון נוספות המזוהות בספרות \cite{WEF2024} כוללות: דליפת נתונים בין סוכנים, התקפות "\LR{prompt injection}" המכוונות לצינורות סוכנים, התנהגויות מתעוררות בלתי-מכוונות, פערי אחריות כאשר סוכנים גורמים נזק, ושיבוש סוציו-אקונומי.
+
+\subsection{שקיפות ואחריותיות}
+
+בית הספר לניהול \LR{Tepper} של \LR{Carnegie Mellon} \cite{CMU_Tepper2024} מדגיש כי חברות המשתמשות בסוכני \LR{AI} חייבות לפתח סטנדרטים אתיים לשקיפות, חינוך משתמשים ואחריותיות, ולאמץ אחריות על פעולות הסוכנים. עיקרון זה, פשוט ככל שיהיה, בעל השלכות עמוקות: אם חברה פורסת מערכת \LR{MAS} שגורמת נזק, היא אינה יכולה לטעון "הסוכן החליט לבד".
+
+\subsection{מסגרות ממשל}
+
+\LR{Ernst \& Young} פרסמו מסמך מדיניות \cite{EY2024} המציג מסגרות ממשל לפריסת סוכנים בעלי אוטונומיה גבוהה בקנה מידה ארגוני. המסגרת כוללת: הגדרת "גבולות אוטונומיה" ברורים לכל סוכן; מנגנוני ביקורת ותיעוד של כל החלטה משמעותית; נהלי "\LR{kill switch}" לעצירת מערכת \LR{MAS} בחירום; ובדיקות תקופתיות של התאמת מטרות.
+
+\subsection{בעיית ההתאמה ברמת המערכת}
+
+בעיית ההתאמה (\LR{alignment problem}) ב-\LR{MAS} מסובכת הרבה יותר מאשר בסוכן יחיד \cite{Medium_AgentHunter2024}. ייתכן מצב שבו כל סוכן בודד מותאם היטב למטרתו המקומית, אך המערכת הכוללת רודפת אחרי מטרה גלובלית בלתי-מכוונת שאף אחד לא תכנן. תופעה זו, הנובעת ישירות מהתנהגויות מתעוררות שנדונו בפרק 3, מהווה אחד האתגרים הפתוחים החשובים ביותר בתחום.
+
+\subsection{הנוף הרגולטורי}
+
+הפורום הכלכלי העולמי (\LR{World Economic Forum}) ציין ב-2024 \cite{WEF2024} כי האופי האוטונומי של סוכני \LR{AI} מעלה שאלות אתיות לגבי קבלת החלטות ואחריות, עם השלכות סוציו-אקונומיות הדורשות ממשל פרואקטיבי. נכון לכתיבת מאמר זה, אין עדיין מסגרת רגולטורית מקיפה ספציפית ל-\LR{MAS} ברמה הלאומית או הבינלאומית. ה-\LR{EU AI Act} מתייחס לסוכני \LR{AI} באופן כללי, אך אינו מתמודד עם האתגרים הייחודיים של מערכות מרובות-סוכנים.
+
+\newpage
+
+%% ============================================================
+%% CONCLUSIONS
+%% ============================================================
+\section{מסקנות}
+
+\subsection{סיכום הממצאים המרכזיים}
+
+מחקר זה הציג סקירה מקיפה של מערכות רב-סוכניות (\LR{MAS}) ובינה מלאכותית אוטונומית, תוך כיסוי של ששה ממדים מרכזיים: ארכיטקטורות, תיאום, למידת חיזוק והתנהגויות מתעוררות, מסגרות \LR{LLM}, יישומים בעולם האמיתי, ואתיקה וממשל.
+
+הממצאים המרכזיים ניתנים לסיכום במספר תובנות עיקריות:
+
+\textbf{ראשית, \LR{MAS} הבשילה מרעיון תיאורטי לטכנולוגיה תעשייתית.} שוק ה-\LR{MAS} העולמי צומח בקצב של \LR{$\text{CAGR} = 45.1\%$} \cite{MarketUS2024}, ומסגרות כמו \LR{AutoGen}, \LR{CrewAI} ו-\LR{LangGraph} הפכו את בניית מערכות \LR{MAS} לנגישה לקהל רחב. זהו שינוי מהותי שמשמעותו שאנו עוברים מ"מה \LR{MAS} יכולה לעשות" ל"כיצד \LR{MAS} צריכה להיות מנוהלת ומפוקחת".
+
+\textbf{שנית, ה-\LR{LLM} הוא הגורם המשנה-משחק המרכזי.} שילוב \LR{LLMs} כליבה קוגניטיבית של סוכנים אפשר קפיצת מדרגה ביכולות --- הסקה שפתית, תכנון רב-שלבי ותקשורת בשפה טבעית הפכו ממאפיינים ניסיוניים למרכיבי יסוד \cite{arXiv2402}. עם זאת, \LR{LLMs} מביאים גם אתגרים חדשים: הזיות, הגבלות חלון הקשר ואי-ודאות בהתנהגות.
+
+\textbf{שלישית, התנהגויות מתעוררות הן גם ההבטחה הגדולה וגם הסיכון הגדול.} מחקרים של \LR{Google Research} \cite{GoogleResearch_SocialLearning2021} ו-\LR{DeepMind} \cite{DeepMind_Bartering} הדגימו כי סוכנים יכולים לפתח יכולות מתוחכמות שלא תוכנתו במפורש. אך אותה תופעה עצמה --- התנהגות מתעוררת --- היא שמאחורי "\LR{digital stampedes}" \cite{MIT_Media2025} וסיכוני קנוניה מתעוררת \cite{CoopAI2024}.
+
+\textbf{רביעית, הפער בין תיאוריה לפרקטיקה נותר משמעותי.} מסגרות \LR{MAS} רבות בנויות על הנחות אידיאליות שמתפוררות בסביבות עולם-אמת \cite{ScienceDirect_AgentAI2025}. זמן אחור, תצפית חלקית ואינטרסים מנוגדים הם אתגרים שמחקר עתידי חייב להתמודד איתם.
+
+\textbf{חמישית, הממשל האתי נמצא בפיגור אחרי הטכנולוגיה.} בעוד שהטכנולוגיה מתקדמת במהירות, מסגרות הממשל, הרגולציה והאתיקה מתפתחות לאט יותר \cite{WEF2024}. הפער הזה מהווה סיכון ממשי, ומחייב מאמץ מתואם של חוקרים, תעשיינים ורגולטורים.
+
+\subsection{כיוונים עתידיים}
+
+מספר כיוונים עתידיים בולטים מניתוח הספרות:
+
+\textbf{שיפור מנגנוני אמון בין-סוכני:} פיתוח מנגנונים שמאפשרים לסוכנים לאמת את אמינות המידע שהם מקבלים מסוכנים אחרים הוא אחד האתגרים הפתוחים החשובים ביותר.
+
+\textbf{\LR{MAS} עם ממשל מובנה:} פיתוח ארכיטקטורות \LR{MAS} שבהן מנגנוני ממשל, שקיפות ואחריות מובנים בתשתית ולא מוספים בדיעבד.
+
+\textbf{למידה מטא בין סוכנים:} פיתוח יכולות שבהן סוכנים לא רק פותרים בעיות אלא גם לומדים כיצד לשתף פעולה בצורה יעילה יותר לאורך זמן.
+
+\textbf{\LR{MAS} קוונטי:} שילוב של עקרונות מחשוב קוונטי עם ארכיטקטורות \LR{MAS} עשוי לאפשר פתרון בעיות אופטימיזציה שאינן ניתנות לפתרון בחישוב קלאסי.
+
+\subsection{מחשבה סיכומית}
+
+מערכות רב-סוכניות מייצגות את הגבול הבא של הבינה המלאכותית. הן מאפשרות לנו לבנות מערכות המתמודדות עם מורכבות בקנה מידה שאינו ניתן להשגה בגישות קודמות. אך עם עוצמה זו באה אחריות: האחריות לוודא שמערכות אלו פועלות בצורה בטוחה, שקופה ואחראית.
+
+הטכנולוגיה כבר כאן. השאלה אינה האם \LR{MAS} תשנה את העולם --- היא כבר עושה זאת --- אלא כיצד נוודא שהשינוי הזה יהיה לטובה. זה מחייב שיתוף פעולה בין חוקרים, מהנדסים, מקבלי מדיניות ואזרחים --- בדיוק כפי שמערכת \LR{MAS} עצמה מחייבת שיתוף פעולה בין סוכנים מרובים לקראת מטרה משותפת.
+
+\newpage
+
+%% ============================================================
+%% BIBLIOGRAPHY — must be inside \begin{english}...\end{english}
+%% ============================================================
+\begin{english}
+\printbibliography[title={Bibliography}]
+\end{english}
 
 \end{document}
