@@ -217,9 +217,9 @@ SERPER_API_KEY=your_serper_api_key_here
     },
     "agents": {
       "claude_model": "anthropic/claude-sonnet-4-6",
-      "gemini_model": "gemini/gemini-2.0-flash",
+      "gemini_model": "gemini/gemini-2.5-flash",
       "temperature": 0.7,
-      "max_tokens": 16000
+      "max_tokens": 32000
     },
     "latex": {
       "engine": "xelatex",
@@ -253,7 +253,7 @@ ACTIVE_LLM=claude
 LLM_API_KEY=your_anthropic_key
 ```
 
-Default models: `gemini/gemini-2.0-flash` / `anthropic/claude-sonnet-4-6` (set in `constants.py`, overridable in `setup.json`).
+Default models: `gemini/gemini-2.5-flash` / `anthropic/claude-sonnet-4-6` (set in `constants.py`, overridable in `setup.json`).
 
 > **Note:** The `anthropic/` prefix in the Claude model ID is required — without it, the CrewAI LLM factory misidentifies the provider as OpenAI.
 
@@ -318,10 +318,13 @@ results/
 ├── references.bib           ← Generated bibliography
 ├── article.pdf              ← Final compiled PDF (primary output)
 ├── article.log              ← XeLaTeX compilation log
-├── cost_report.json         ← Token usage and USD cost breakdown
+├── cost_report_<timestamp>.json  ← Token usage and USD cost breakdown (one per run)
 └── figures/
-    └── graph.pdf            ← Programmatically generated graph
+    ├── diagram.pdf          ← Architecture diagram (image artifact)
+    └── graph.pdf            ← Programmatically generated matplotlib graph
 ```
+
+> The compiled `results/` outputs (PDF, `.tex`, figures, cost report) are committed to the repo as a reference sample of a full pipeline run.
 
 ---
 
@@ -394,7 +397,7 @@ HW3/
 │   └── TODO.md
 ├── skills/                                  ← Per-agent SKILL.md files
 ├── data/
-├── results/                                 ← Generated output (gitignored)
+├── results/                                 ← Generated output (committed as sample)
 ├── assets/
 ├── .env-example
 ├── pyproject.toml
